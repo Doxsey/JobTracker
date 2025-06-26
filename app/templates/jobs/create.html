@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Create Job - Job Tracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <h1>Create New Job</h1>
+
+        <form action="" method="post" novalidate>
+            {{ form.hidden_tag() }}
+            <div class="mb-3">
+                {{ form.company.label }}<br>
+                {{ form.company(size=32) }}
+            </div>
+            <div class="mb-3">
+                {{ form.title.label }}<br>
+                {{ form.title(size=32) }}
+            </div>
+            <div class="mb-3">
+                {{ form.description.label }}<br>
+                {{ form.description(rows=4) }}
+            </div>
+            <div class="mb-3">
+                {{ form.location.label }}<br>
+                {{ form.location(size=32) }}
+            </div>
+            <div class="mb-3">
+                {{ form.salary_range_low.label }}<br>
+                {{ form.salary_range_low(size=32) }}
+            </div>
+            <div class="mb-3">
+                {{ form.salary_range_high.label }}<br>
+                {{ form.salary_range_high(size=32) }}
+            </div>
+            <div class="mb-3">
+                {{ form.remote_option.label }}<br>
+                {{ form.remote_option(size=32) }}
+            </div>
+            <div class="mb-3">
+                {{ form.posting_id.label }}<br>
+                {{ form.posting_id(size=32) }}
+            </div>
+            <div class="mb-3">
+                {{ form.referrer_site.label }}<br>
+                {{ form.referrer_site(size=32) }}
+            </div>
+            <div class="mb-3">
+                {{ form.submit(class="btn btn-success") }}
+            </div>
+        </form>
+
+        {# <form method="POST" class="mt-4">
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" class="form-control" id="username" name="username" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" name="email" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="first_name" class="form-label">First Name</label>
+                <input type="text" class="form-control" id="first_name" name="first_name" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="last_name" class="form-label">Last Name</label>
+                <input type="text" class="form-control" id="last_name" name="last_name" required>
+            </div>
+
+            <div class="mb-3">
+                <button type="submit" class="btn btn-success">Create User</button>
+                <a href="{{ url_for('users.index') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form> #}
+    </div>
+</div>
+{% endblock %}

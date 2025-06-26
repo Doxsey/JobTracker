@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Job Tracker{% endblock %}
+
+{% block content %}
+
+<div class="row">
+    <div class="col-md-8">
+        <p class="lead">List of current job applications</p>
+        
+        {# <h3>Features:</h3>
+        <ul>
+            <li>User management with full CRUD operations</li>
+            <li>SQLite database with SQLAlchemy ORM</li>
+            <li>Blueprint-based application structure</li>
+            <li>Jinja2 templating with Bootstrap styling</li>
+        </ul> #}
+        
+
+        <div class="mt-4">
+            <a href="{{ url_for('jobs.create') }}" class="btn btn-success">Add Job Application</a>
+            {# <a href="{{ url_for('users.index') }}" class="btn btn-primary">Manage Users</a> #}
+            <a href="{{ url_for('users.create') }}" class="btn btn-success">Add New User</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
