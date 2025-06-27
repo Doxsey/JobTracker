@@ -1,81 +1,138 @@
-{% extends "base.html" %}
-
-{% block title %}Create Job - Job Tracker{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% block title %}Create Job - Job Tracker{% endblock %} {% block content
+%}
 <div class="row justify-content-center">
-    <div class="col-md-6">
-        <h1>Create New Job</h1>
+  <div class="col-md-8">
+    <h1>Create New Job</h1>
 
-        <form action="" method="post" novalidate>
-            {{ form.hidden_tag() }}
-            <div class="mb-3">
-                {{ form.company.label }}<br>
-                {{ form.company(size=32) }}
-            </div>
-            <div class="mb-3">
-                {{ form.title.label }}<br>
-                {{ form.title(size=32) }}
-            </div>
-            <div class="mb-3">
-                {{ form.description.label }}<br>
-                {{ form.description(rows=4) }}
-            </div>
-            <div class="mb-3">
-                {{ form.location.label }}<br>
-                {{ form.location(size=32) }}
-            </div>
-            <div class="mb-3">
-                {{ form.salary_range_low.label }}<br>
-                {{ form.salary_range_low(size=32) }}
-            </div>
-            <div class="mb-3">
-                {{ form.salary_range_high.label }}<br>
-                {{ form.salary_range_high(size=32) }}
-            </div>
-            <div class="mb-3">
-                {{ form.remote_option.label }}<br>
-                {{ form.remote_option(size=32) }}
-            </div>
-            <div class="mb-3">
-                {{ form.posting_id.label }}<br>
-                {{ form.posting_id(size=32) }}
-            </div>
-            <div class="mb-3">
-                {{ form.referrer_site.label }}<br>
-                {{ form.referrer_site(size=32) }}
-            </div>
-            <div class="mb-3">
-                {{ form.submit(class="btn btn-success") }}
-            </div>
-        </form>
+    <form action="" method="post" novalidate>
+      <div class="container text-center">
+        <div class="row">
+          <div class="col">
+            {{ form.company(size=32, class="form-control", placeholder="Company") }}
+            <br />
+          </div>
+          <div class="col">
+            {{ form.title(size=32, class="form-control", placeholder="Job Title") }}
+          </div>
+        </div>
 
-        {# <form method="POST" class="mt-4">
-            <div class="mb-3">
-                <label for="username" class="form-label">Username</label>
-                <input type="text" class="form-control" id="username" name="username" required>
-            </div>
+        <div class="row">
+          <div class="col">
+            {{ form.location(size=32, class="form-control", placeholder="Location") }}
+          </div>
+          <div class="col">
+            <div class="row">
+              <div class="dropdown">
+                <button
+                  class="btn btn-secondary dropdown-toggle"
+                  type="button"
+                  id="remoteOptionDropdown"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >
+                  Remote Option
+                </button>
 
-            <div class="mb-3">
-                <label for="email" class="form-label">Email</label>
-                <input type="email" class="form-control" id="email" name="email" required>
+                <ul class="dropdown-menu" aria-labelledby="remoteOptionDropdown">
+                  <li><a class="dropdown-item" href="#" data-value="Remote">Remote</a></li>
+                  <li><a class="dropdown-item" href="#" data-value="Onsite">Onsite</a></li>
+                  <li><a class="dropdown-item" href="#" data-value="Hybrid">Hybrid</a></li>
+                  <li><a class="dropdown-item" href="#" data-value="Unknown">Unknown</a></li>
+                </ul>
+              </div>
             </div>
+          </div>
+        </div>
 
-            <div class="mb-3">
-                <label for="first_name" class="form-label">First Name</label>
-                <input type="text" class="form-control" id="first_name" name="first_name" required>
-            </div>
+        <div class="row">
+          <div class="col">
+            {{ form.description(rows=2, class="form-control", placeholder="Job Description") }}
+          </div>
+        </div>
 
-            <div class="mb-3">
-                <label for="last_name" class="form-label">Last Name</label>
-                <input type="text" class="form-control" id="last_name" name="last_name" required>
-            </div>
+        {#
+        <div class="row">
+          <div class="col-sm-12">
+            {{ form.description.label }}
+            <br />
+            {{ form.description(rows=2) }}
+          </div>
+        </div>
+        #}
+        <div class="mb-3">
+          {{ form.salary_range_low.label }}
+          <br />
+          {{ form.salary_range_low(size=32) }}
+        </div>
+        <div class="mb-3">
+          {{ form.salary_range_high.label }}
+          <br />
+          {{ form.salary_range_high(size=32) }}
+        </div>
+        <div class="mb-3">
+          {{ form.posting_id.label }}
+          <br />
+          {{ form.posting_id(size=32) }}
+        </div>
+        <div class="mb-3">
+          {{ form.referrer_site.label }}
+          <br />
+          {{ form.referrer_site(size=32) }}
+        </div>
+        <div class="mb-3">{{ form.submit(class="btn btn-success") }}</div>
+      </div>
+    </form>
 
-            <div class="mb-3">
-                <button type="submit" class="btn btn-success">Create User</button>
-                <a href="{{ url_for('users.index') }}" class="btn btn-secondary">Cancel</a>
-            </div>
-        </form> #}
-    </div>
+    {#
+    <form method="POST" class="mt-4">
+      <div class="mb-3">
+        <label for="username" class="form-label">Username</label>
+        <input type="text" class="form-control" id="username" name="username" required />
+      </div>
+
+      <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <input type="email" class="form-control" id="email" name="email" required />
+      </div>
+
+      <div class="mb-3">
+        <label for="first_name" class="form-label">First Name</label>
+        <input type="text" class="form-control" id="first_name" name="first_name" required />
+      </div>
+
+      <div class="mb-3">
+        <label for="last_name" class="form-label">Last Name</label>
+        <input type="text" class="form-control" id="last_name" name="last_name" required />
+      </div>
+
+      <div class="mb-3">
+        <button type="submit" class="btn btn-success">Create User</button>
+        <a href="{{ url_for('users.index') }}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+    #}
+  </div>
 </div>
+
+<script>
+  // Handle dropdown item clicks for first dropdown
+  document.querySelectorAll(".dropdown-item").forEach((item) => {
+    item.addEventListener("click", function (e) {
+      e.preventDefault();
+
+      // Get the clicked item's text and value
+      console.log("Dropdown item clicked:", this.textContent);
+      const selectedText = this.textContent;
+      const selectedValue = this.getAttribute("data-value");
+
+      // Update the dropdown button text
+      const dropdownButton = document.getElementById("remoteOptionDropdown");
+      dropdownButton.textContent = selectedText;
+
+      // Optional: Store the value for form submission
+      console.log("Selected value:", selectedValue);
+    });
+  });
+</script>
+
 {% endblock %}
