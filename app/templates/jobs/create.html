@@ -1,138 +1,121 @@
-{% extends "base.html" %} {% block title %}Create Job - Job Tracker{% endblock %} {% block content
-%}
+{% extends "base.html" %} {% block title %}Create Job - Job Tracker{% endblock
+%} {% block content %}
 <div class="row justify-content-center">
   <div class="col-md-8">
-    <h1>Create New Job</h1>
+    <h3>Add New Job</h3>
+    <br />
 
     <form action="" method="post" novalidate>
+      {{ form.hidden_tag() }}
       <div class="container text-center">
         <div class="row">
           <div class="col">
-            {{ form.company(size=32, class="form-control", placeholder="Company") }}
+            {{ form.company(size=32, class="form-control",
+            placeholder="Company") }}
             <br />
           </div>
           <div class="col">
+            <!-- prettier-ignore -->
             {{ form.title(size=32, class="form-control", placeholder="Job Title") }}
           </div>
         </div>
 
         <div class="row">
           <div class="col">
-            {{ form.location(size=32, class="form-control", placeholder="Location") }}
+            {{ form.location(size=32, class="form-control",
+            placeholder="Location") }}
           </div>
           <div class="col">
             <div class="row">
-              <div class="dropdown">
-                <button
-                  class="btn btn-secondary dropdown-toggle"
-                  type="button"
-                  id="remoteOptionDropdown"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
-                >
-                  Remote Option
-                </button>
+              <select
+                class="form-select"
+                name="remote_option"
+                id="remote_option"
+                aria-label="Default select example"
+              >
+                <option value="">Select Remote Option</option>
+                <option value="Remote">Remote</option>
+                <option value="Hybrid">Hybrid</option>
+                <option value="Onsite">Onsite</option>
+                <option value="Unknown">Unknown</option>
+              </select>
+            </div>
+          </div>
+        </div>
 
-                <ul class="dropdown-menu" aria-labelledby="remoteOptionDropdown">
-                  <li><a class="dropdown-item" href="#" data-value="Remote">Remote</a></li>
-                  <li><a class="dropdown-item" href="#" data-value="Onsite">Onsite</a></li>
-                  <li><a class="dropdown-item" href="#" data-value="Hybrid">Hybrid</a></li>
-                  <li><a class="dropdown-item" href="#" data-value="Unknown">Unknown</a></li>
-                </ul>
-              </div>
+        <div class="row mt-3">
+          <div class="col">
+            <div class="mb-3">
+              <!-- prettier-ignore -->
+              {{ form.description(rows=3, class="form-control", placeholder="Job Description") }}
             </div>
           </div>
         </div>
 
         <div class="row">
           <div class="col">
-            {{ form.description(rows=2, class="form-control", placeholder="Job Description") }}
+            {{ form.salary_range_low(size=32, class="form-control",
+            placeholder="Salary Range Low") }}
+            <br />
+          </div>
+          <div class="col">
+            {{ form.salary_range_high(size=32, class="form-control",
+            placeholder="Salary Range High") }}
           </div>
         </div>
 
-        {#
         <div class="row">
-          <div class="col-sm-12">
-            {{ form.description.label }}
-            <br />
-            {{ form.description(rows=2) }}
+          <div class="col">
+            {{ form.company_website(size=32, class="form-control",
+            placeholder="Company Website") }}
+          </div>
+          <div class="col">
+            {{ form.posting_id(size=32, class="form-control",
+            placeholder="Posting ID") }}
           </div>
         </div>
-        #}
-        <div class="mb-3">
-          {{ form.salary_range_low.label }}
-          <br />
-          {{ form.salary_range_low(size=32) }}
+
+        <br />
+        <hr />
+        <br />
+
+        <div class="row">
+          <div class="col">
+            <h5 class="text-start">Referrer Information</h5>
+            <br />
+          </div>
         </div>
-        <div class="mb-3">
-          {{ form.salary_range_high.label }}
-          <br />
-          {{ form.salary_range_high(size=32) }}
+
+        <div class="row">
+          <div class="col">
+            {{ form.referrer(size=32, class="form-control",
+            placeholder="Referrer") }}
+            <br />
+          </div>
+          <div class="col">
+            {{ form.referrer_posting_id(size=32, class="form-control",
+            placeholder="Referrer Posting ID") }}
+          </div>
         </div>
-        <div class="mb-3">
-          {{ form.posting_id.label }}
-          <br />
-          {{ form.posting_id(size=32) }}
+
+        <div class="row">
+          <div class="col">
+            {{ form.posting_url(size=32, class="form-control",
+            placeholder="Posting URL") }}
+            <br />
+          </div>
         </div>
-        <div class="mb-3">
-          {{ form.referrer_site.label }}
-          <br />
-          {{ form.referrer_site(size=32) }}
-        </div>
+
         <div class="mb-3">{{ form.submit(class="btn btn-success") }}</div>
       </div>
     </form>
 
-    {#
-    <form method="POST" class="mt-4">
-      <div class="mb-3">
-        <label for="username" class="form-label">Username</label>
-        <input type="text" class="form-control" id="username" name="username" required />
-      </div>
-
-      <div class="mb-3">
-        <label for="email" class="form-label">Email</label>
-        <input type="email" class="form-control" id="email" name="email" required />
-      </div>
-
-      <div class="mb-3">
-        <label for="first_name" class="form-label">First Name</label>
-        <input type="text" class="form-control" id="first_name" name="first_name" required />
-      </div>
-
-      <div class="mb-3">
-        <label for="last_name" class="form-label">Last Name</label>
-        <input type="text" class="form-control" id="last_name" name="last_name" required />
-      </div>
-
-      <div class="mb-3">
-        <button type="submit" class="btn btn-success">Create User</button>
-        <a href="{{ url_for('users.index') }}" class="btn btn-secondary">Cancel</a>
-      </div>
-    </form>
-    #}
+    {% for field, errors in form.errors.items() %} {% for error in errors %}
+    <div class="row">
+      <div class="alert alert-danger">{{ field }}: {{ error }}</div>
+    </div>
+    {% endfor %} {% endfor %}
   </div>
 </div>
-
-<script>
-  // Handle dropdown item clicks for first dropdown
-  document.querySelectorAll(".dropdown-item").forEach((item) => {
-    item.addEventListener("click", function (e) {
-      e.preventDefault();
-
-      // Get the clicked item's text and value
-      console.log("Dropdown item clicked:", this.textContent);
-      const selectedText = this.textContent;
-      const selectedValue = this.getAttribute("data-value");
-
-      // Update the dropdown button text
-      const dropdownButton = document.getElementById("remoteOptionDropdown");
-      dropdownButton.textContent = selectedText;
-
-      // Optional: Store the value for form submission
-      console.log("Selected value:", selectedValue);
-    });
-  });
-</script>
 
 {% endblock %}
