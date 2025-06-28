@@ -1,10 +1,16 @@
 from flask import Blueprint, render_template
+from app.models import Job
 
 main_bp = Blueprint('main', __name__)
 
 @main_bp.route('/')
 def index():
-    return render_template('index.html')
+    jobs = Job.query.filter_by(posting_status="Open").all()
+    print(f"Number of open jobs: {len(jobs)}")
+    print(jobs)
+    for job in jobs:
+        print(f"Job ID: {job.id}, Title: {job.title}, Company: {job.company}, Status: {job.posting_status}")
+    return render_template('index.html', jobs=jobs)
 
 @main_bp.route('/about')
 def about():

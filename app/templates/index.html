@@ -1,27 +1,56 @@
-{% extends "base.html" %}
-
-{% block title %}Home - Job Tracker{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% block title %}Home - Job Tracker{% endblock %} {%
+block content %}
 
 <div class="row">
-    <div class="col-md-8">
-        <p class="lead">List of current job applications</p>
-        
-        {# <h3>Features:</h3>
-        <ul>
-            <li>User management with full CRUD operations</li>
-            <li>SQLite database with SQLAlchemy ORM</li>
-            <li>Blueprint-based application structure</li>
-            <li>Jinja2 templating with Bootstrap styling</li>
-        </ul> #}
-        
+  <div class="col-md-8">
+    <p class="lead">List of Open Job Postings</p>
 
-        <div class="mt-4">
-            <a href="{{ url_for('jobs.create') }}" class="btn btn-success">Add Job Application</a>
-            {# <a href="{{ url_for('users.index') }}" class="btn btn-primary">Manage Users</a> #}
-            <a href="{{ url_for('users.create') }}" class="btn btn-success">Add New User</a>
-        </div>
+    <table class="table table-striped table-hover">
+      <thead>
+        <tr>
+          <th>Company</th>
+          <th>Job Title</th>
+          <th>Location</th>
+          <th>Remote Option</th>
+          <th>Salary Range</th>
+          <th>Date Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for job in jobs %}
+        <tr>
+          <td>{{ job.company }}</td>
+          <td>{{ job.title }}</td>
+          <td>{{ job.location }}</td>
+          <td>{{ job.remote_option }}</td>
+          <td>${{ job.salary_range_low }} - ${{ job.salary_range_high }}</td>
+          <td>{{ job.created_dt.strftime('%Y-%m-%d') }}</td>
+          <td>
+            Actions here {#
+            <a
+              href="{{ url_for('jobs.edit', job_id=job.id) }}"
+              class="btn btn-warning btn-sm"
+              >Edit</a
+            >
+            <a
+              href="{{ url_for('jobs.delete', job_id=job.id) }}"
+              class="btn btn-danger btn-sm"
+              >Delete</a
+            >
+            #}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="mt-4">
+      <a href="{{ url_for('jobs.create') }}" class="btn btn-success"
+        >Add Job Application</a
+      >
     </div>
+  </div>
 </div>
 {% endblock %}
