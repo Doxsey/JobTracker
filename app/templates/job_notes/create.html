@@ -1,0 +1,30 @@
+{% extends "base.html" %} {% block title %}Add Job Note{% endblock %} {% block
+content %}
+
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <form action="" method="post" novalidate>
+      {{ form.hidden_tag() }}
+
+      <div class="container text-start">
+        <div class="row">
+          <div class="col-1"><strong>ID: </strong>{{ job.id }}</div>
+          <div class="col"><strong>Company: </strong>{{ job.company }}</div>
+          <div class="col"><strong>Title: </strong>{{ job.title }}</div>
+          <div class="col"><strong>Location: </strong>{{ job.location }}</div>
+        </div>
+        <br />
+        <div class="row">
+          <div class="col">
+            <!-- prettier-ignore -->
+            {{ form.content(size=32, rows=6,class="form-control", placeholder="Add Note") }}
+          </div>
+        </div>
+        <br />
+        <div class="mb-3">{{ form.submit(class="btn btn-success") }}</div>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

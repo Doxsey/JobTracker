@@ -22,6 +22,9 @@ class Job(db.Model):
     cover_letter_file = db.Column(db.String(50), nullable=True)
     posting_status = db.Column(db.String(50), default='Open')
     posting_url = db.Column(db.String(200), nullable=True)
+    # notes = db.relationship('JobNote', back_populates='job', cascade='all, delete-orphan')
+    notes = db.relationship('JobNotes', backref='Job')
+    activities = db.relationship('JobActivities', backref='Job')
 
     def __repr__(self):
         return f'<Job {self.title}>'
@@ -46,4 +49,53 @@ class Job(db.Model):
             'cover_letter_file': self.cover_letter_file,
             'posting_status': self.posting_status,
             'posting_url': self.posting_url
+        }
+    
+class JobNotes(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    job_id = db.Column(db.Integer, db.ForeignKey('job.id'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+
+    def __repr__(self):
+        return f'<JobNote {self.id}>'
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'job_id': self.job_id,
+            'content': self.content,
+            'created_at': self.created_at
+        }
+
+class JobActivities(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    job_id = db.Column(db.Integer, db.ForeignKey('job.id'), nullable=False)
+    activity_date = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    activity_type = db.Column(db.String(50), nullable=False)
+    activity_description = db.Column(db.Text, nullable=False)
+
+    def __repr__(self):
+        return f'<JobActivity {self.id} - {self.activity_type}>'
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'job_id': self.job_id,
+            'activity_date': self.activity_date,
+            'activity_type': self.activity_type,
+            'activity_description': self.activity_description
+        }
+    
+class JobActivityTypes(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    activity_type = db.Column(db.String(50), nullable=False, unique=True)
+
+    def __repr__(self):
+        return f'<JobActivityType {self.activity_type}>'
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'activity_type': self.activity_type
         }
