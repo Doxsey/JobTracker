@@ -1,9 +1,12 @@
 from app import db
 from sqlalchemy import Index
+from sqlalchemy.types import JSON
 from datetime import datetime, timezone
 
 
 class Job(db.Model):
+    __tablename__ = 'jobs'
+
     id = db.Column(db.Integer, primary_key=True)
     company = db.Column(db.String(100), nullable=False)
     company_website = db.Column(db.String(200), nullable=True)
@@ -52,8 +55,10 @@ class Job(db.Model):
         }
     
 class JobNotes(db.Model):
+    __tablename__ = 'job_notes'
+    
     id = db.Column(db.Integer, primary_key=True)
-    job_id = db.Column(db.Integer, db.ForeignKey('job.id'), nullable=False)
+    job_id = db.Column(db.Integer, db.ForeignKey('jobs.id'), nullable=False)
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
 
@@ -69,11 +74,13 @@ class JobNotes(db.Model):
         }
 
 class JobActivities(db.Model):
+    __tablename__ = 'job_activities'
+
     id = db.Column(db.Integer, primary_key=True)
-    job_id = db.Column(db.Integer, db.ForeignKey('job.id'), nullable=False)
+    job_id = db.Column(db.Integer, db.ForeignKey('jobs.id'), nullable=False)
     activity_date = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     activity_type = db.Column(db.String(50), nullable=False)
-    activity_description = db.Column(db.Text, nullable=False)
+    activity_json_data = db.Column(JSON, nullable=False)
 
     def __repr__(self):
         return f'<JobActivity {self.id} - {self.activity_type}>'
@@ -84,10 +91,12 @@ class JobActivities(db.Model):
             'job_id': self.job_id,
             'activity_date': self.activity_date,
             'activity_type': self.activity_type,
-            'activity_description': self.activity_description
+            'activity_json_data': self.activity_json_data
         }
     
 class JobActivityTypes(db.Model):
+    __tablename__ = 'job_activity_types'
+
     id = db.Column(db.Integer, primary_key=True)
     activity_type = db.Column(db.String(50), nullable=False, unique=True)
 
