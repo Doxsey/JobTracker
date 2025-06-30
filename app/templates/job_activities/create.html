@@ -1,10 +1,17 @@
 {% extends "base.html" %} {% block title %}Add Job Activity{% endblock %} {%
 block content %}
 
+<style>
+  .highlighted {
+    background-color: #007bff !important;
+    color: white !important;
+  }
+</style>
+
 <div class="row justify-content-center">
   <div class="col-md-8">
     <form action="" method="post" novalidate>
-      {{ form.hidden_tag() }}
+      {# {{ form.hidden_tag() }} #}
 
       <div class="container text-start">
         <div class="row">
@@ -35,7 +42,12 @@ block content %}
             />
           </div>
           <div class="col-md-auto">
-            <button type="submit" class="btn btn-success" style="width: 100%">
+            <button
+              type="submit"
+              class="btn btn-success"
+              id="selectActivityBtn"
+              style="width: 100%"
+            >
               Select Activity
             </button>
           </div>
@@ -59,11 +71,25 @@ block content %}
 
 <script src="/static/show-job-activity.js"></script>
 <script>
-  const selectedActivity = document.getElementById(
-    "selectedActivityType"
-  ).value;
-  const activityDetailsId = "activityDetails";
-  new ShowJobActivity(selectedActivity, activityDetailsId);
+  document.addEventListener("DOMContentLoaded", function () {
+    const selectButton = document.getElementById("selectActivityBtn");
+
+    selectButton.addEventListener("click", function (event) {
+      event.preventDefault(); // Prevent form submission if needed
+
+      const selectedActivity = document.getElementById(
+        "selectedActivityType"
+      ).value;
+      const activityDetailsId = "activityDetails";
+
+      // Only run ShowJobActivity if an activity is selected
+      if (selectedActivity) {
+        new ShowJobActivity(selectedActivity, activityDetailsId);
+      } else {
+        alert("Please select an activity first!");
+      }
+    });
+  });
 </script>
 
 {% endblock %}

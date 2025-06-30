@@ -28,6 +28,11 @@ class SearchableSelect {
             if (e.key === 'Enter' || e.key === 'ArrowDown') {
                 e.preventDefault();
                 this.showDropdown();
+                if (e.key === 'ArrowDown' && this.filteredOptions.length > 0) {
+                    // Highlight the first item when opening with arrow down
+                    this.highlightedIndex = 0;
+                    this.renderDropdown();
+                }
             }
             return;
         }
@@ -73,6 +78,9 @@ class SearchableSelect {
         this.filteredOptions.forEach((option, index) => {
             const item = document.createElement('div');
             item.className = 'dropdown-item';
+            if (index === this.highlightedIndex) {
+                item.classList.add('highlighted');
+            }
             item.textContent = option;
             item.addEventListener('click', () => this.selectOption(option));
             this.dropdown.appendChild(item);
@@ -103,7 +111,14 @@ class SearchableSelect {
         if (items.length === 0) return;
         
         this.clearHighlight();
-        this.highlightedIndex = Math.min(this.highlightedIndex + 1, items.length - 1);
+        
+        // If no item is highlighted yet, start with the first one
+        if (this.highlightedIndex < 0) {
+            this.highlightedIndex = 0;
+        } else {
+            this.highlightedIndex = Math.min(this.highlightedIndex + 1, items.length - 1);
+        }
+        
         items[this.highlightedIndex].classList.add('highlighted');
         this.scrollToHighlighted();
     }
@@ -113,7 +128,14 @@ class SearchableSelect {
         if (items.length === 0) return;
         
         this.clearHighlight();
-        this.highlightedIndex = Math.max(this.highlightedIndex - 1, 0);
+        
+        // If no item is highlighted yet, start with the last one
+        if (this.highlightedIndex < 0) {
+            this.highlightedIndex = items.length - 1;
+        } else {
+            this.highlightedIndex = Math.max(this.highlightedIndex - 1, 0);
+        }
+        
         items[this.highlightedIndex].classList.add('highlighted');
         this.scrollToHighlighted();
     }
