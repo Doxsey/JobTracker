@@ -2,3 +2,4 @@ Flask
 Flask-SQLAlchemy
 flask-wtf
 Flask-Migrate
+pytz
