@@ -10,7 +10,7 @@ block content %}
 
 <div class="row justify-content-center">
   <div class="col-md-8">
-    <form action="" method="post" novalidate>
+    <form action="" method="post" novalidate id="dynamic-form">
       {# {{ form.hidden_tag() }} #}
 
       <div class="container text-start">
@@ -57,20 +57,29 @@ block content %}
             <div id="dropdown" class="dropdown-menu"></div>
           </div>
         </div>
-        <div id="dynamic-fields"></div>
+
+        <br />
+
+        <div
+          id="dynamic-fields"
+          class="container-md d-flex flex-column gap-3"
+        ></div>
+
+        <div class="container-md d-flex flex-column gap-3" id="test-area"></div>
       </div>
     </form>
   </div>
 </div>
 
 <script src="/static/js/searchable-select.js"></script>
+<script src="/static/js/job_activity_forms.js"></script>
+<script src="/static/js/show-job-activity.js"></script>
+
 <script>
   const activityTypes = {{ job_activity_types_list | tojson }};
   new SearchableSelect('searchInput', 'dropdown', 'selectedActivityType', activityTypes);
 </script>
 
-<script src="/static/js/job_activity_forms.js"></script>
-<script src="/static/js/show-job-activity.js"></script>
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     const selectButton = document.getElementById("selectActivityBtn");
@@ -81,11 +90,17 @@ block content %}
       const selectedActivity = document.getElementById(
         "selectedActivityType"
       ).value;
+
       const dynamicFieldsContainer = "dynamic-fields";
+      const dynamicFieldsForm = "dynamic-form";
 
       // Only run ShowJobActivity if an activity is selected
       if (selectedActivity) {
-        new ShowJobActivity(selectedActivity, dynamicFieldsContainer);
+        new ShowJobActivity(
+          selectedActivity,
+          dynamicFieldsContainer,
+          dynamicFieldsForm
+        );
       } else {
         alert("Please select an activity first!");
       }
