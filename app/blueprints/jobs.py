@@ -169,12 +169,12 @@ def create():
                 referrer = request.form['referrer']
                 referrer_posting_id = request.form['referrer_posting_id']
                 resume_file = form.resume_file.data
+                job_description_file = form.job_description_file.data
+                cover_letter_file = form.cover_letter_file.data
 
                 if resume_file:
                     original_resume_filename = secure_filename(resume_file.filename)
-                    print(f"Original resume filename: {original_resume_filename}")
                     unique_resume_filename = generate_unique_filename(original_resume_filename)
-                    print(f"Unique resume filename: {unique_resume_filename}")
 
                     # Create full file path
                     file_path = os.path.join(current_app.config['FILE_STORAGE_PATH'], 'Resumes', unique_resume_filename)
@@ -182,11 +182,36 @@ def create():
                     try:
                         # Save the file
                         resume_file.save(file_path)
-                        flash(f'File "{original_resume_filename}" uploaded successfully as "{unique_resume_filename}"!', 'success')
-
-                        # Optional: Store mapping of original to new filename in database
-                        # store_file_mapping(original_filename, unique_filename)
+                        # flash(f'File "{original_resume_filename}" uploaded successfully as "{unique_resume_filename}"!', 'success')
                         
+                    except Exception as e:
+                        flash(f'Error uploading file: {str(e)}', 'error')
+
+                if job_description_file:
+                    original_job_description_filename = secure_filename(job_description_file.filename)
+                    unique_job_description_filename = generate_unique_filename(original_job_description_filename)
+
+                    # Create full file path
+                    file_path = os.path.join(current_app.config['FILE_STORAGE_PATH'], 'Job_Descriptions', unique_job_description_filename)
+
+                    try:
+                        # Save the file
+                        job_description_file.save(file_path)
+                        # flash(f'File "{original_job_description_filename}" uploaded successfully as "{unique_job_description_filename}"!', 'success')
+                    except Exception as e:
+                        flash(f'Error uploading file: {str(e)}', 'error')
+
+                if cover_letter_file:
+                    original_cover_letter_filename = secure_filename(cover_letter_file.filename)
+                    unique_cover_letter_filename = generate_unique_filename(original_cover_letter_filename)
+
+                    # Create full file path
+                    file_path = os.path.join(current_app.config['FILE_STORAGE_PATH'], 'Cover_Letters', unique_cover_letter_filename)
+
+                    try:
+                        # Save the file
+                        cover_letter_file.save(file_path)
+                        # flash(f'File "{original_cover_letter_filename}" uploaded successfully as "{unique_cover_letter_filename}"!', 'success')
                     except Exception as e:
                         flash(f'Error uploading file: {str(e)}', 'error')
 
@@ -209,7 +234,9 @@ def create():
                     referrer=referrer,
                     referrer_posting_id=referrer_posting_id,
                     posting_url=posting_url,
-                    resume_file=unique_resume_filename if resume_file else None
+                    resume_file=unique_resume_filename if resume_file else None,
+                    job_description_file=unique_job_description_filename if job_description_file else None,
+                    cover_letter_file=unique_cover_letter_filename if cover_letter_file else None
                 )
                 
                 try:
