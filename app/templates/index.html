@@ -44,16 +44,6 @@ block content %}
               >Add Note</a
             >
           </td>
-
-          {#
-          <td>
-            <ul class="list-group">
-              {% for note in job.notes %}
-              <li class="list-group-item">{{ note.content }}</li>
-              {% endfor %}
-            </ul>
-          </td>
-          #}
         </tr>
         {% endfor %}
       </tbody>
