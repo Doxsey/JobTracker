@@ -1,0 +1,18 @@
+{% macro select_file_upload(file_field, label) %}
+
+<div class="row row-cols-2">
+  <div class="col-3 d-flex align-items-center justify-content-center">
+    <label for="{{ file_field.id }}">{{ label }}:</label>
+  </div>
+  <div class="col-9 d-flex align-items-left">
+    {{ file_field(class="form-control", accept=".pdf,.docx,.doc,.tex",
+    style="width:100%; display:inline-block;") }}
+
+    <!-- Display validation errors -->
+    {% if file_field.errors %} {% for error in file_field.errors %}
+    <div class="error-text">{{ error }}</div>
+    {% endfor %} {% endif %}
+  </div>
+</div>
+
+{% endmacro %}

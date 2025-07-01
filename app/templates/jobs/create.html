@@ -1,5 +1,5 @@
-{% extends "base.html" %} {% block title %}Create Job - Job Tracker{% endblock
-%} {% block content %}
+{% from "jobs_macros.html" import select_file_upload %} {% extends "base.html"
+%} {% block title %}Create Job - Job Tracker{% endblock %} {% block content %}
 <div class="row justify-content-center">
   <div class="col-md-8">
     <h3>Add New Job</h3>
@@ -75,18 +75,10 @@
           </div>
         </div>
 
-        <div class="row">
-          <div class="col">
-            {{ form.resume_file(class="file-input",
-            accept=".pdf,.docx,.doc,.tex") }}
-
-            <!-- Display validation errors -->
-            {% if form.resume_file.errors %} {% for error in
-            form.resume_file.errors %}
-            <div class="error-text">{{ error }}</div>
-            {% endfor %} {% endif %}
-          </div>
-        </div>
+        <br />
+        {{ select_file_upload(form.resume_file, "Resume") }} {{
+        select_file_upload(form.cover_letter_file, "Cover Letter") }} {{
+        select_file_upload(form.job_description_file, "Job Description") }}
 
         <br />
         <hr />

@@ -6,7 +6,7 @@ from flask_wtf.file import FileField, FileRequired, FileAllowed
 from wtforms.validators import DataRequired
 from werkzeug.utils import secure_filename
 from app.models import Job
-import os, uuid
+import os, uuid, json
 
 jobs_bp = Blueprint('jobs', __name__)
 
@@ -23,12 +23,23 @@ class NewJobForm(FlaskForm):
     referrer_posting_id = StringField('Referrer Posting ID')
     posting_url = StringField('Posting URL')
     company_website = StringField('Company Website')
-    resume_file = FileField('Choose File', validators=[
+    resume_file = FileField('Resume File', validators=[
+        FileRequired(),
+        FileAllowed(['pdf', 'docx', 'doc', 'tex'], 
+                   'Only PDF and document files allowed!')
+    ])
+    job_description_file = FileField('Job Description File', validators=[
+        FileRequired(),
+        FileAllowed(['pdf', 'docx', 'doc', 'tex'], 
+                   'Only PDF and document files allowed!')
+    ])
+    cover_letter_file = FileField('Cover Letter File', validators=[
         FileRequired(),
         FileAllowed(['pdf', 'docx', 'doc', 'tex'], 
                    'Only PDF and document files allowed!')
     ])
     submit = SubmitField('Add Job')
+
 
 @jobs_bp.route('/create', methods=['GET', 'POST'])
 def create():
@@ -41,11 +52,19 @@ def create():
     if request.method == 'POST':
         # Check if it's a JSON request or form submission
         is_json_request = request.is_json or request.content_type == 'application/json'
+        is_multipart_request = 'multipart/form-data' in request.content_type if request.content_type else False
         
-        if is_json_request:
-            # Handle JSON API request
+        # Handle API requests (JSON or multipart with JSON data)
+        if is_json_request or (is_multipart_request and 'data' in request.form):
             try:
-                data = request.get_json()
+                # Extract JSON data
+                if is_json_request:
+                    data = request.get_json()
+                    resume_file = None
+                else:
+                    # Handle multipart request with JSON data and file
+                    data = json.loads(request.form.get('data', '{}'))
+                    resume_file = request.files.get('resume_file')
                 
                 # Extract data from JSON
                 company = data.get('company')
@@ -69,6 +88,31 @@ def create():
                 if posting_id and Job.query.filter_by(posting_id=posting_id).first():
                     return jsonify({'error': 'Job posting ID already exists'}), 409
                 
+                # Handle resume file upload if present
+                unique_resume_filename = None
+                if resume_file and resume_file.filename:
+                    # Validate file type
+                    allowed_extensions = {'pdf', 'docx', 'doc', 'tex'}
+                    file_ext = resume_file.filename.rsplit('.', 1)[1].lower() if '.' in resume_file.filename else ''
+                    
+                    if file_ext not in allowed_extensions:
+                        return jsonify({'error': 'Invalid file type. Only PDF and document files allowed!'}), 400
+                    
+                    # Generate unique filename and save file
+                    original_resume_filename = secure_filename(resume_file.filename)
+                    unique_resume_filename = generate_unique_filename(original_resume_filename)
+                    
+                    # Create full file path
+                    file_path = os.path.join(current_app.config['FILE_STORAGE_PATH'], 'Resumes', unique_resume_filename)
+                    
+                    try:
+                        # Ensure directory exists
+                        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                        # Save the file
+                        resume_file.save(file_path)
+                    except Exception as e:
+                        return jsonify({'error': f'Error uploading file: {str(e)}'}), 500
+                
                 # Create new job
                 job = Job(
                     company=company,
@@ -82,17 +126,26 @@ def create():
                     posting_id=posting_id,
                     referrer=referrer,
                     referrer_posting_id=referrer_posting_id,
-                    posting_url=posting_url
+                    posting_url=posting_url,
+                    resume_file=unique_resume_filename
                 )
                 
                 db.session.add(job)
                 db.session.commit()
                 
-                return jsonify({
+                response_data = {
                     'message': 'Job created successfully',
-                    'job_id': job.id  # assuming your Job model has an id field
-                }), 201
+                    'job_id': job.id
+                }
                 
+                # Include file info in response if file was uploaded
+                if unique_resume_filename:
+                    response_data['resume_file'] = unique_resume_filename
+                
+                return jsonify(response_data), 201
+                
+            except json.JSONDecodeError:
+                return jsonify({'error': 'Invalid JSON data'}), 400
             except Exception as e:
                 print(f"Error creating job via API: {e}")
                 db.session.rollback()
