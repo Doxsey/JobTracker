@@ -57,7 +57,7 @@ block content %}
             <div id="dropdown" class="dropdown-menu"></div>
           </div>
         </div>
-        <div class="row" id="activityDetails"></div>
+        <div id="dynamic-fields"></div>
       </div>
     </form>
   </div>
@@ -69,6 +69,7 @@ block content %}
   new SearchableSelect('searchInput', 'dropdown', 'selectedActivityType', activityTypes);
 </script>
 
+<script src="/static/job_activity_forms.js"></script>
 <script src="/static/show-job-activity.js"></script>
 <script>
   document.addEventListener("DOMContentLoaded", function () {
@@ -80,11 +81,11 @@ block content %}
       const selectedActivity = document.getElementById(
         "selectedActivityType"
       ).value;
-      const activityDetailsId = "activityDetails";
+      const dynamicFieldsContainer = "dynamic-fields";
 
       // Only run ShowJobActivity if an activity is selected
       if (selectedActivity) {
-        new ShowJobActivity(selectedActivity, activityDetailsId);
+        new ShowJobActivity(selectedActivity, dynamicFieldsContainer);
       } else {
         alert("Please select an activity first!");
       }
