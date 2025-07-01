@@ -1,8 +1,9 @@
 class ShowJobActivity {
-    constructor(selectedActivity, dynamicFieldsContainer, dynamicFieldsForm) {
+    constructor(selectedActivity, dynamicFieldsContainer, dynamicFieldsForm, jobId) {
         this.selectedActivity = selectedActivity;
         this.dynamicFieldsContainer = document.getElementById(dynamicFieldsContainer);
         this.dynamicFieldsForm = document.getElementById(dynamicFieldsForm);
+        this.jobId = jobId;
 
         this.init();
     }
@@ -32,7 +33,36 @@ class ShowJobActivity {
             const data = Object.fromEntries(formData.entries());
             console.log("Form Data:", JSON.stringify(data, null, 2));
 
-            
+            const request_data = {
+                job_id: this.jobId,
+                activity_type: this.selectedActivity,
+                activity_date: data.activity_date || new Date().toISOString().split('T')[0], // Default to today if not provided
+                activity_json_data: JSON.stringify(data)
+
+            };
+            console.log("Request Data:", JSON.stringify(request_data, null, 2));
+
+
+            fetch('/job_activities/api/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(request_data)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(result => {
+                console.log('Activity added:', result);
+                // Optionally, update UI or reset form here
+            })
+            .catch(error => {
+                console.error('Error adding activity:', error);
+            });
 
             // this.updateFormFields(this.selectedActivity);
         });

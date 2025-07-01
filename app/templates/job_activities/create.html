@@ -99,7 +99,8 @@ block content %}
         new ShowJobActivity(
           selectedActivity,
           dynamicFieldsContainer,
-          dynamicFieldsForm
+          dynamicFieldsForm,
+          {{ job.id }}
         );
       } else {
         alert("Please select an activity first!");

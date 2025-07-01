@@ -1,40 +1,60 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, jsonify, render_template, request, redirect, url_for, flash
 from app import db
 from flask_wtf import FlaskForm
 from wtforms import StringField, SelectField, BooleanField, SubmitField, TextAreaField, DecimalField
 from wtforms.validators import DataRequired
 from app.models import Job, JobActivities, JobActivityTypes
-
+from datetime import datetime
 job_activities_bp = Blueprint('job_activities', __name__)
-
-# class NewJobActivityForm(FlaskForm):
-#     # activity_type = StringField('Activity Type', validators=[DataRequired()])
-#     activity_type = SelectField('Activity Type', coerce=int, validators=[DataRequired()])
-#     # activity_description = TextAreaField('Activity Description', validators=[DataRequired()])
-#     submit = SubmitField('Add Activity')
 
 @job_activities_bp.route('/<int:job_id>/create', methods=['GET', 'POST'])
 def create(job_id):
-    # form = NewJobActivityForm()
 
     job = Job.query.get_or_404(job_id)
     job_activity_types = JobActivityTypes.query.all()
     job_activity_types_list = [(type.activity_type) for type in job_activity_types]
-    print(job_activity_types_list)
-    # form.activity_type.choices = [(type.id, type.activity_type) for type in job_activity_types]
-
-    print(f"Creating activity for Job ID: {job.id}, Title: {job.title}")
-
-    # if form.validate_on_submit():
-    #     new_activity = JobActivities(
-    #         job_id=job_id,
-    #         # activity_type=form.activity_type.data,
-    #         # activity_description=form.activity_description.data
-    #     )
-    #     db.session.add(new_activity)
-    #     db.session.commit()
-    #     flash('Activity added successfully!', 'success')
-    #     return redirect('/')
-    #     return redirect(url_for('jobs.view', job_id=job_id))
 
     return render_template('job_activities/create.html', job=job, job_activity_types_list=job_activity_types_list)
+
+@job_activities_bp.route('api/create', methods=['POST'])
+def add():
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No input data provided'}), 400
+
+    try:
+        # Adjust field names as needed to match your JobActivities model
+        job_id = data['job_id']
+        activity_type = data.get('activity_type')
+        activity_date_str = data.get('activity_date')
+        activity_date = None
+        if activity_date_str:
+            try:
+                activity_date = datetime.fromisoformat(activity_date_str)
+            except ValueError:
+                return jsonify({'error': 'Invalid activity_date format. Use ISO 8601 format.'}), 400
+        activity_json_data = data.get('activity_json_data', {})
+
+        new_activity = JobActivities(
+            job_id=job_id,
+            activity_date=activity_date,
+            activity_type=activity_type,
+            activity_json_data=activity_json_data
+        
+        )
+
+        print(f"Adding new activity: {new_activity}")
+
+        db.session.add(new_activity)
+        db.session.commit()
+
+        response_data = {
+                    'message': 'Job activity added successfully',
+                    'job_activity_id': new_activity.id,
+                    'job_id': job_id,
+                }
+
+        return jsonify(response_data), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500

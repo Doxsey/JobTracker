@@ -11,7 +11,7 @@ const activityTemplates = {
               type="text"
               class="form-control"
               id="emailFrom"
-              name="email-from"
+              name="email_from"
               placeholder="Sender Name"
             />
           </div>
@@ -22,7 +22,7 @@ const activityTemplates = {
               type="text"
               class="form-control"
               id="emailUrl"
-              name="email-url"
+              name="email_url"
               placeholder="Email URL"
             />
           </div>
@@ -33,7 +33,7 @@ const activityTemplates = {
             <textarea
               class="form-control"
               id="emailBrief"
-                name="email-brief"
+                name="email_brief"
               rows="3"
               placeholder="Email Brief"
             ></textarea>
@@ -47,7 +47,7 @@ const activityTemplates = {
               type="date"
               class="form-control"
               id="email-date"
-              name="email-date"
+              name="email_date"
             />
           </div>
         </div>`,
@@ -61,7 +61,7 @@ const activityTemplates = {
                 type="date"
                 class="form-control"
                 id="closed-date"
-                name="closed-date"
+                name="closed_date"
               />
             </div>
           </div>
@@ -71,7 +71,7 @@ const activityTemplates = {
               <input
                 class="form-control"
                 type="text"
-                name="closing-reason"
+                name="closing_reason"
                 placeholder="Closing reason"
                 aria-label="default input example"
               />
