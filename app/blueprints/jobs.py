@@ -61,11 +61,15 @@ def create():
                 if is_json_request:
                     data = request.get_json()
                     resume_file = None
+                    job_description_file = None
+                    cover_letter_file = None
                 else:
                     # Handle multipart request with JSON data and file
                     data = json.loads(request.form.get('data', '{}'))
                     resume_file = request.files.get('resume_file')
-                
+                    job_description_file = request.files.get('job_description_file')
+                    cover_letter_file = request.files.get('cover_letter_file')
+
                 # Extract data from JSON
                 company = data.get('company')
                 company_website = data.get('company_website')
@@ -90,28 +94,26 @@ def create():
                 
                 # Handle resume file upload if present
                 unique_resume_filename = None
+                unique_job_description_filename = None
+                unique_cover_letter_filename = None
+
+                # Process resume file
                 if resume_file and resume_file.filename:
-                    # Validate file type
-                    allowed_extensions = {'pdf', 'docx', 'doc', 'tex'}
-                    file_ext = resume_file.filename.rsplit('.', 1)[1].lower() if '.' in resume_file.filename else ''
+                    unique_resume_filename = process_file_upload(resume_file, 'Resumes')
+                    if isinstance(unique_resume_filename, tuple):  # Error occurred
+                        return unique_resume_filename
                     
-                    if file_ext not in allowed_extensions:
-                        return jsonify({'error': 'Invalid file type. Only PDF and document files allowed!'}), 400
-                    
-                    # Generate unique filename and save file
-                    original_resume_filename = secure_filename(resume_file.filename)
-                    unique_resume_filename = generate_unique_filename(original_resume_filename)
-                    
-                    # Create full file path
-                    file_path = os.path.join(current_app.config['FILE_STORAGE_PATH'], 'Resumes', unique_resume_filename)
-                    
-                    try:
-                        # Ensure directory exists
-                        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-                        # Save the file
-                        resume_file.save(file_path)
-                    except Exception as e:
-                        return jsonify({'error': f'Error uploading file: {str(e)}'}), 500
+                # Process job description file
+                if job_description_file and job_description_file.filename:
+                    unique_job_description_filename = process_file_upload(job_description_file, 'Job_Descriptions')
+                    if isinstance(unique_job_description_filename, tuple):  # Error occurred
+                        return unique_job_description_filename
+                
+                # Process cover letter file
+                if cover_letter_file and cover_letter_file.filename:
+                    unique_cover_letter_filename = process_file_upload(cover_letter_file, 'Cover_Letters')
+                    if isinstance(unique_cover_letter_filename, tuple):  # Error occurred
+                        return unique_cover_letter_filename
                 
                 # Create new job
                 job = Job(
@@ -127,7 +129,9 @@ def create():
                     referrer=referrer,
                     referrer_posting_id=referrer_posting_id,
                     posting_url=posting_url,
-                    resume_file=unique_resume_filename
+                    resume_file=unique_resume_filename,
+                    job_description_file=unique_job_description_filename,
+                    cover_letter_file=unique_cover_letter_filename
                 )
                 
                 db.session.add(job)
@@ -135,13 +139,21 @@ def create():
                 
                 response_data = {
                     'message': 'Job created successfully',
-                    'job_id': job.id
+                    'job_id': job.id,
+                    'company': job.company,
+                    'title': job.title,
                 }
                 
                 # Include file info in response if file was uploaded
                 if unique_resume_filename:
                     response_data['resume_file'] = unique_resume_filename
-                
+
+                if unique_job_description_filename:
+                    response_data['job_description_file'] = unique_job_description_filename
+
+                if unique_cover_letter_filename:
+                    response_data['cover_letter_file'] = unique_cover_letter_filename
+
                 return jsonify(response_data), 201
                 
             except json.JSONDecodeError:
@@ -253,6 +265,30 @@ def create():
             print("Rendering create job form")
             return render_template('jobs/create.html', form=form)
         
+def process_file_upload(file, folder_name):
+    """Process file upload with validation and return unique filename or error response"""
+    # Validate file type
+    allowed_extensions = {'pdf', 'docx', 'doc', 'tex'}
+    file_ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
+    
+    if file_ext not in allowed_extensions:
+        return jsonify({'error': f'Invalid file type for {file.filename}. Only PDF and document files allowed!'}), 400
+    
+    # Generate unique filename and save file
+    original_filename = secure_filename(file.filename)
+    unique_filename = generate_unique_filename(original_filename)
+    
+    # Create full file path
+    file_path = os.path.join(current_app.config['FILE_STORAGE_PATH'], folder_name, unique_filename)
+    
+    try:
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        # Save the file
+        file.save(file_path)
+        return unique_filename
+    except Exception as e:
+        return jsonify({'error': f'Error uploading {file.filename}: {str(e)}'}), 500
 
 def generate_unique_filename(original_filename):
     """Generate a unique filename while preserving the extension"""
