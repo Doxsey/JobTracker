@@ -9,12 +9,21 @@ db = SQLAlchemy()
 
 def create_app():
     app = Flask(__name__)
+
+    app_base_folder = 'C:/Users/Ryan/Documents/JobTracker'
+    file_storage_folder = f'{app_base_folder}/JobTrackerFiles'
+
+    create_folders(app_base_folder, file_storage_folder)
     
+
     # Configuration
     app.config['SECRET_KEY'] = 'your-secret-key-here'
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///C:/Users/Ryan/Documents/app.db'
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{app_base_folder}/app.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    
+
+
+    app.config['FILE_STORAGE_PATH'] = file_storage_folder
+
     # Initialize extensions
     db.init_app(app)
 
@@ -91,3 +100,22 @@ def create_app():
         db.session.commit()
     
     return app
+
+def create_folders(app_base_folder, file_storage_folder):
+    additional_folders = [
+        "Resumes",
+        "Cover_Letters",
+        "Job_Descriptions",
+    ]
+    
+    # Ensure the database folder exists
+    if not os.path.exists(app_base_folder):
+        os.makedirs(app_base_folder)
+    if not os.path.exists(file_storage_folder):
+        os.makedirs(file_storage_folder)
+
+    # Create additional folders
+    for folder in additional_folders:
+        folder_path = os.path.join(file_storage_folder, folder)
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)

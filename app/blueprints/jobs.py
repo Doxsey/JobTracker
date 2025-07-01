@@ -1,9 +1,12 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from app import db
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, DecimalField
+from wtforms import StringField, BooleanField, SubmitField, TextAreaField, DecimalField
+from flask_wtf.file import FileField, FileRequired, FileAllowed
 from wtforms.validators import DataRequired
+from werkzeug.utils import secure_filename
 from app.models import Job
+import os, uuid
 
 jobs_bp = Blueprint('jobs', __name__)
 
@@ -20,18 +23,15 @@ class NewJobForm(FlaskForm):
     referrer_posting_id = StringField('Referrer Posting ID')
     posting_url = StringField('Posting URL')
     company_website = StringField('Company Website')
+    resume_file = FileField('Choose File', validators=[
+        FileRequired(),
+        FileAllowed(['pdf', 'docx', 'doc', 'tex'], 
+                   'Only PDF and document files allowed!')
+    ])
     submit = SubmitField('Add Job')
-
-# @jobs_bp.route('/')
-# def index():
-#     """Display all jobs"""
-#     jobs = Job.query.all()
-#     return render_template('jobs/index.html', jobs=jobs)
 
 @jobs_bp.route('/create', methods=['GET', 'POST'])
 def create():
-    print("Creating a new job")
-    
     if request.method == 'GET':
         # Handle GET request - show the form
         form = NewJobForm()
@@ -115,7 +115,28 @@ def create():
                 posting_id = request.form['posting_id']
                 referrer = request.form['referrer']
                 referrer_posting_id = request.form['referrer_posting_id']
-                
+                resume_file = form.resume_file.data
+
+                if resume_file:
+                    original_resume_filename = secure_filename(resume_file.filename)
+                    print(f"Original resume filename: {original_resume_filename}")
+                    unique_resume_filename = generate_unique_filename(original_resume_filename)
+                    print(f"Unique resume filename: {unique_resume_filename}")
+
+                    # Create full file path
+                    file_path = os.path.join(current_app.config['FILE_STORAGE_PATH'], 'Resumes', unique_resume_filename)
+
+                    try:
+                        # Save the file
+                        resume_file.save(file_path)
+                        flash(f'File "{original_resume_filename}" uploaded successfully as "{unique_resume_filename}"!', 'success')
+
+                        # Optional: Store mapping of original to new filename in database
+                        # store_file_mapping(original_filename, unique_filename)
+                        
+                    except Exception as e:
+                        flash(f'Error uploading file: {str(e)}', 'error')
+
                 # Check if job already exists
                 if posting_id and Job.query.filter_by(posting_id=posting_id).first():
                     flash('Job posting ID already exists!', 'error')
@@ -134,7 +155,8 @@ def create():
                     posting_id=posting_id,
                     referrer=referrer,
                     referrer_posting_id=referrer_posting_id,
-                    posting_url=posting_url
+                    posting_url=posting_url,
+                    resume_file=unique_resume_filename if resume_file else None
                 )
                 
                 try:
@@ -150,3 +172,12 @@ def create():
             
             print("Rendering create job form")
             return render_template('jobs/create.html', form=form)
+        
+
+def generate_unique_filename(original_filename):
+    """Generate a unique filename while preserving the extension"""
+    # Get file extension
+    _, ext = os.path.splitext(original_filename)
+    # Generate unique name using UUID
+    unique_name = str(uuid.uuid4()) + ext
+    return unique_name
