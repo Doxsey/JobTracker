@@ -1,7 +1,9 @@
 from app import db
 from sqlalchemy import Index
 from sqlalchemy.types import JSON
-from datetime import datetime, timezone
+from datetime import datetime
+from flask import current_app
+import pytz
 
 
 class Job(db.Model):
@@ -19,13 +21,12 @@ class Job(db.Model):
     salary_range_high = db.Column(db.Float, nullable=True)
     remote_option = db.Column(db.String(50), nullable=True)
     posting_id = db.Column(db.String(100), nullable=True)
-    created_dt = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    created_dt = db.Column(db.DateTime, default=lambda: datetime.now(pytz.timezone(current_app.config['LOCAL_TIMEZONE'])))
     job_description_file = db.Column(db.String(50), nullable=True)
     resume_file = db.Column(db.String(50), nullable=True)
     cover_letter_file = db.Column(db.String(50), nullable=True)
     posting_status = db.Column(db.String(50), default='Open')
     posting_url = db.Column(db.String(200), nullable=True)
-    # notes = db.relationship('JobNote', back_populates='job', cascade='all, delete-orphan')
     notes = db.relationship('JobNotes', backref='Job')
     activities = db.relationship('JobActivities', backref='Job')
 
@@ -60,7 +61,7 @@ class JobNotes(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     job_id = db.Column(db.Integer, db.ForeignKey('jobs.id'), nullable=False)
     content = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(pytz.timezone(current_app.config['LOCAL_TIMEZONE'])))
 
     def __repr__(self):
         return f'<JobNote {self.id}>'
@@ -78,7 +79,7 @@ class JobActivities(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     job_id = db.Column(db.Integer, db.ForeignKey('jobs.id'), nullable=False)
-    activity_date = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    activity_date = db.Column(db.DateTime, default=lambda: datetime.now(pytz.timezone(current_app.config['LOCAL_TIMEZONE'])))
     activity_type = db.Column(db.String(50), nullable=False)
     activity_json_data = db.Column(JSON, nullable=False)
 

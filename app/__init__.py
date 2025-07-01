@@ -23,6 +23,7 @@ def create_app():
 
 
     app.config['FILE_STORAGE_PATH'] = file_storage_folder
+    app.config['LOCAL_TIMEZONE'] = 'America/Chicago'  # Set your local timezone here
 
     # Initialize extensions
     db.init_app(app)
