@@ -20,7 +20,6 @@ has_activities = job.activities|length > 0 %} {% set has_notes =
 job.notes|length > 0 %}
 <tr
   class="clickable-row"
-  data-bs-toggle="collapse"
   data-bs-target="#details-{{ job.id }}"
   aria-expanded="false"
 >
@@ -31,22 +30,7 @@ job.notes|length > 0 %}
   <td>{{ job.remote_option }}</td>
   <td>${{ job.salary_range_low }} - ${{ job.salary_range_high }}</td>
   <td>{{ job.created_dt.strftime('%Y-%m-%d') }}</td>
-  <td>
-    <a
-      data-href="{{ url_for('job_activities.create', job_id=job.id) }}"
-      class="btn btn-primary btn-sm ms-2"
-      style="display: inline-block"
-      onclick="addActivityButtonClicked(event)"
-      >Add Activity</a
-    >
-    <a
-      data-href="{{ url_for('job_notes.create', job_id=job.id) }}"
-      class="btn btn-primary btn-sm"
-      style="display: inline-block"
-      onclick="addNoteButtonClicked(event)"
-      >Add Note</a
-    >
-  </td>
+  <td>{{action_buttons(job)}}</td>
 </tr>
 
 <tr class="collapse detail-row" id="details-{{ job.id }}">
@@ -55,7 +39,7 @@ job.notes|length > 0 %}
       <div class="mb-3">
         {% if has_activities %}
         <button
-          class="btn btn-outline-primary sub-detail-btn me-2"
+          class="btn btn-outline-secondary sub-detail-btn me-2"
           data-bs-toggle="collapse"
           data-bs-target="#activities-{{ job.id }}"
           aria-expanded="false"
@@ -96,12 +80,6 @@ job.notes|length > 0 %}
                   <td>{{ job_activity.activity_date.strftime('%Y-%m-%d') }}</td>
                   <td>
                     <pre><code class="json">{{ job_activity.activity_json_data | e }}</code></pre>
-
-                    {#
-                    <pre style="white-space: pre-wrap; word-break: break-word">
-                    {{ job_activity.activity_json_data}}
-                    </pre>
-                    #}
                   </td>
                 </tr>
                 {% endfor %}
@@ -150,20 +128,35 @@ job.notes|length > 0 %}
   <td>{{ job.remote_option }}</td>
   <td>${{ job.salary_range_low }} - ${{ job.salary_range_high }}</td>
   <td>{{ job.created_dt.strftime('%Y-%m-%d') }}</td>
-  <td>
-    <a
-      href="{{ url_for('job_activities.create', job_id=job.id) }}"
-      class="btn btn-primary btn-sm ms-2"
-      style="display: inline-block"
-      >Add Activity</a
-    >
-    <a
-      href="{{ url_for('job_notes.create', job_id=job.id) }}"
-      class="btn btn-primary btn-sm"
-      style="display: inline-block"
-      >Add Note</a
-    >
-  </td>
+  <td>{{action_buttons(job)}}</td>
 </tr>
+
+{% endmacro %} {% macro action_buttons(job) %}
+<div class="dropdown">
+  <button
+    class="btn btn-secondary dropdown-toggle btn-sm"
+    type="button"
+    data-bs-toggle="dropdown"
+    aria-expanded="false"
+  >
+    Actions
+  </button>
+  <ul class="dropdown-menu">
+    <li>
+      <a
+        class="dropdown-item"
+        data-href="{{ url_for('job_activities.create', job_id=job.id) }}"
+        >Add Activity</a
+      >
+    </li>
+    <li>
+      <a
+        class="dropdown-item"
+        data-href="{{ url_for('job_notes.create', job_id=job.id) }}"
+        >Add Note</a
+      >
+    </li>
+  </ul>
+</div>
 
 {% endmacro %}

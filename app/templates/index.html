@@ -7,7 +7,7 @@ content %}
   <div class="col-md-12">
     <p class="lead">List of Open Job Postings</p>
 
-    <table class="table table-striped table-hover">
+    <table class="table table-hover">
       <thead>
         <tr>
           <th></th>
@@ -23,8 +23,9 @@ content %}
 
       <tbody>
         {% for job in jobs %} {% set has_activities = job.activities|length > 0
-        %} {% if has_activities %} {{ job_row_with_additional_info(job) }} {%
-        else %} {{ job_row_without_activities(job) }} {% endif %} {% endfor %}
+        %} {% set has_notes = job.notes|length > 0 %} {% if has_activities or
+        has_notes %} {{ job_row_with_additional_info(job) }} {% else %} {{
+        job_row_without_activities(job) }} {% endif %} {% endfor %}
       </tbody>
     </table>
 
@@ -37,64 +38,68 @@ content %}
 </div>
 
 <script>
-  function addActivityButtonClicked(event) {
-    event.stopPropagation(); // Prevents row click
-    window.location.href = event.currentTarget.getAttribute('data-href');
-  }
-
-  function addNoteButtonClicked(event) {
-    event.stopPropagation(); // Prevents row click
-    window.location.href = event.currentTarget.getAttribute('data-href');
-  }s
-
   document.addEventListener("DOMContentLoaded", function () {
+    // Handle dropdown clicks to prevent row expansion
+    document.addEventListener("click", function (e) {
+      // If click is within dropdown, stop propagation
+      if (e.target.closest(".dropdown")) {
+        e.stopPropagation();
+
+        // Handle dropdown item clicks
+        if (e.target.classList.contains("dropdown-item")) {
+          const href = e.target.getAttribute("data-href");
+          if (href) {
+            window.location.href = href;
+          }
+        }
+        return;
+      }
+
+      // Handle row clicks for expansion
+      const clickableRow = e.target.closest(".clickable-row");
+      if (clickableRow) {
+        const targetId = clickableRow.getAttribute("data-bs-target");
+        const target = document.querySelector(targetId);
+        if (target) {
+          const bsCollapse = new bootstrap.Collapse(target, { toggle: true });
+        }
+      }
+    });
+
     // Handle main row collapse icons
     const collapsibleRows = document.querySelectorAll(
       '[data-bs-toggle="collapse"]:not(.sub-detail-btn)'
     );
-
     collapsibleRows.forEach(function (row) {
       const targetId = row.getAttribute("data-bs-target");
       const target = document.querySelector(targetId);
       const icon = row.querySelector(".expand-icon");
-
       target.addEventListener("shown.bs.collapse", function () {
         row.classList.remove("collapsed");
       });
-
       target.addEventListener("hidden.bs.collapse", function () {
         row.classList.add("collapsed");
       });
-
       // Initialize collapsed state
       row.classList.add("collapsed");
     });
 
     // Handle nested collapse icons
     const nestedButtons = document.querySelectorAll(".sub-detail-btn");
-
     nestedButtons.forEach(function (button) {
       const targetId = button.getAttribute("data-bs-target");
       const target = document.querySelector(targetId);
       const icon = button.querySelector(".nested-expand-icon");
-
       target.addEventListener("shown.bs.collapse", function () {
         button.classList.remove("collapsed");
       });
-
       target.addEventListener("hidden.bs.collapse", function () {
         button.classList.add("collapsed");
       });
-
       // Initialize collapsed state
       button.classList.add("collapsed");
     });
-  
-  
-  
   });
-
-
 </script>
 
 {% endblock %}
