@@ -33,12 +33,13 @@ class ShowJobActivity {
             const data = Object.fromEntries(formData.entries());
             console.log("Form Data:", JSON.stringify(data, null, 2));
 
+            // Exclude "activity_date" from data before stringifying
+            const { activity_date, ...dataWithoutDate } = data;
             const request_data = {
                 job_id: this.jobId,
                 activity_type: this.selectedActivity,
                 activity_date: data.activity_date || new Date().toISOString().split('T')[0], // Default to today if not provided
-                activity_json_data: JSON.stringify(data)
-
+                activity_json_data: JSON.stringify(dataWithoutDate)
             };
             console.log("Request Data:", JSON.stringify(request_data, null, 2));
 
@@ -73,7 +74,37 @@ class ShowJobActivity {
         this.dynamicFieldsContainer.innerHTML = ''; // Clear previous content
 
         if (activityType && activityTemplates[activityType]) {
-            this.dynamicFieldsContainer.innerHTML = activityTemplates[activityType];
+            const activityDateRow = document.createElement('div');
+            activityDateRow.className = 'row';
+
+            const activityDateCol = document.createElement('div');
+            activityDateCol.className = 'md-3';
+
+            const activityDateLabel = document.createElement('label');
+            activityDateLabel.setAttribute('for', 'activity-date');
+            activityDateLabel.className = 'form-label';
+            activityDateLabel.textContent = 'Date of Activity';
+
+            const emailDateInput = document.createElement('input');
+            emailDateInput.type = 'date';
+            emailDateInput.className = 'form-control';
+            emailDateInput.id = 'activity-date';
+            emailDateInput.name = 'activity_date';
+
+            activityDateCol.appendChild(activityDateLabel);
+            activityDateCol.appendChild(emailDateInput);
+            activityDateRow.appendChild(activityDateCol);
+
+            this.dynamicFieldsContainer.appendChild(activityDateRow);
+
+
+            // Instead of replacing, append the template content
+            const templateDiv = document.createElement('div');
+            templateDiv.innerHTML = activityTemplates[activityType];
+            // Append all child nodes to preserve structure
+            while (templateDiv.firstChild) {
+                this.dynamicFieldsContainer.appendChild(templateDiv.firstChild);
+            }
 
             const rowDiv = document.createElement('div');
             rowDiv.className = 'row';
