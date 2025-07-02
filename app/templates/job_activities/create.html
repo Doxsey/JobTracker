@@ -1,5 +1,6 @@
-{% extends "base.html" %} {% block title %}Add Job Activity{% endblock %} {%
-block content %}
+{% from "jobs_macros.html" import job_display_top_of_page %}{% extends
+"base.html" %} {% block title %}Add Job Activity{% endblock %} {% block content
+%}
 
 <style>
   .highlighted {
@@ -14,12 +15,7 @@ block content %}
       {# {{ form.hidden_tag() }} #}
 
       <div class="container text-start">
-        <div class="row">
-          <div class="col-1"><strong>ID: </strong>{{ job.id }}</div>
-          <div class="col"><strong>Company: </strong>{{ job.company }}</div>
-          <div class="col"><strong>Title: </strong>{{ job.title }}</div>
-          <div class="col"><strong>Location: </strong>{{ job.location }}</div>
-        </div>
+        {{job_display_top_of_page(job)}}
 
         <br />
         <div class="row">
