@@ -47,7 +47,7 @@ const activityTemplates = {
               type="date"
               class="form-control"
               id="email-date"
-              name="email_date"
+              name="activity_date"
             />
           </div>
         </div>`,
@@ -61,7 +61,7 @@ const activityTemplates = {
                 type="date"
                 class="form-control"
                 id="closed-date"
-                name="closed_date"
+                name="activity_date"
               />
             </div>
           </div>

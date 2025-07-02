@@ -30,7 +30,7 @@ def add():
         activity_date = None
         if activity_date_str:
             try:
-                activity_date = datetime.fromisoformat(activity_date_str)
+                activity_date = datetime.strptime(activity_date_str, "%Y-%m-%d")
             except ValueError:
                 return jsonify({'error': 'Invalid activity_date format. Use ISO 8601 format.'}), 400
         activity_json_data = data.get('activity_json_data', {})
