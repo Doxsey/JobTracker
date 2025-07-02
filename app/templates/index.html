@@ -36,8 +36,17 @@ content %}
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 <script>
+  function addActivityButtonClicked(event) {
+    event.stopPropagation(); // Prevents row click
+    window.location.href = event.currentTarget.getAttribute('data-href');
+  }
+
+  function addNoteButtonClicked(event) {
+    event.stopPropagation(); // Prevents row click
+    window.location.href = event.currentTarget.getAttribute('data-href');
+  }s
+
   document.addEventListener("DOMContentLoaded", function () {
     // Handle main row collapse icons
     const collapsibleRows = document.querySelectorAll(
@@ -80,7 +89,12 @@ content %}
       // Initialize collapsed state
       button.classList.add("collapsed");
     });
+  
+  
+  
   });
+
+
 </script>
 
 {% endblock %}

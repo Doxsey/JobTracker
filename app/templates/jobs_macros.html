@@ -33,15 +33,17 @@ job.notes|length > 0 %}
   <td>{{ job.created_dt.strftime('%Y-%m-%d') }}</td>
   <td>
     <a
-      href="{{ url_for('job_activities.create', job_id=job.id) }}"
+      data-href="{{ url_for('job_activities.create', job_id=job.id) }}"
       class="btn btn-primary btn-sm ms-2"
       style="display: inline-block"
+      onclick="addActivityButtonClicked(event)"
       >Add Activity</a
     >
     <a
-      href="{{ url_for('job_notes.create', job_id=job.id) }}"
+      data-href="{{ url_for('job_notes.create', job_id=job.id) }}"
       class="btn btn-primary btn-sm"
       style="display: inline-block"
+      onclick="addNoteButtonClicked(event)"
       >Add Note</a
     >
   </td>
@@ -77,7 +79,7 @@ job.notes|length > 0 %}
       {% if has_activities %}
       <div class="collapse mb-3" id="activities-{{ job.id }}">
         <div class="card card-body sub-detail-row">
-          <h6>Job Activity History</h6>
+          <h5>Job Activity History</h5>
           <div class="table-responsive">
             <table class="table table-sm">
               <thead>
@@ -112,7 +114,7 @@ job.notes|length > 0 %}
       {% endif %} {% if has_notes %}
       <div class="collapse mb-3" id="notes-{{ job.id }}">
         <div class="card card-body sub-detail-row">
-          <h6>Notes</h6>
+          <h5>Notes</h5>
           <div class="table-responsive">
             <table class="table table-sm">
               <thead>
