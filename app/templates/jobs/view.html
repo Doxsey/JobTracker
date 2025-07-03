@@ -12,9 +12,9 @@ content %}
   <div class="col-md-8">
     <h3>View Job</h3>
     <br />
-    <form>
+    <form id="job-view-form">
       {{ form.hidden_tag() }}
-      <div class="container text-center">
+      <div class="container text-center" id="form-container">
         <div class="row mb-2">
           <div class="col text-start">
             <strong>Created:</strong>
@@ -141,53 +141,97 @@ content %}
         {% if job.resume_file or job.cover_letter_file or
         job.job_description_file %}
         <div class="row">
-          <div class="col text-start">
-            <div class="dropdown">
-              <a
-                class="btn btn-secondary dropdown-toggle"
-                href="#"
-                role="button"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
+          <div class="col d-flex justify-content-start">
+            <div class="col d-flex justify-content-start">
+              <button type="button" id="edit-btn" class="btn btn-secondary">
+                Edit Job
+              </button>
+              <button
+                type="button"
+                id="finish-edit-btn"
+                class="btn btn-success"
+                style="display: none"
               >
-                Available Files
-              </a>
+                Save Changes
+              </button>
+            </div>
 
-              <ul class="dropdown-menu">
-                {% if job.resume_file %}
-                <li>
-                  <a
-                    class="dropdown-item"
-                    href="{{ url_for('download.download_file', job_id=job.id, file_type='resume') }}"
-                    >Resume</a
-                  >
-                </li>
-                {% endif %} {% if job.job_description_file %}
-                <li>
-                  <a
-                    class="dropdown-item"
-                    href="{{ url_for('download.download_file', job_id=job.id, file_type='job_description') }}"
-                    >Job Description</a
-                  >
-                </li>
-                {% endif %} {% if job.cover_letter_file %}
-                <li>
-                  <a
-                    class="dropdown-item"
-                    href="{{ url_for('download.download_file', job_id=job.id, file_type='cover_letter') }}"
-                    >Cover Letter</a
-                  >
-                </li>
-                {% endif %}
-              </ul>
+            <div class="col d-flex justify-content-start">
+              <div class="dropdown">
+                <a
+                  class="btn btn-secondary dropdown-toggle"
+                  href="#"
+                  role="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >
+                  Available Files
+                </a>
+
+                <ul class="dropdown-menu">
+                  {% if job.resume_file %}
+                  <li>
+                    <a
+                      class="dropdown-item"
+                      href="{{ url_for('download.download_file', job_id=job.id, file_type='resume') }}"
+                      >Resume</a
+                    >
+                  </li>
+                  {% endif %} {% if job.job_description_file %}
+                  <li>
+                    <a
+                      class="dropdown-item"
+                      href="{{ url_for('download.download_file', job_id=job.id, file_type='job_description') }}"
+                      >Job Description</a
+                    >
+                  </li>
+                  {% endif %} {% if job.cover_letter_file %}
+                  <li>
+                    <a
+                      class="dropdown-item"
+                      href="{{ url_for('download.download_file', job_id=job.id, file_type='cover_letter') }}"
+                      >Cover Letter</a
+                    >
+                  </li>
+                  {% endif %}
+                </ul>
+              </div>
             </div>
           </div>
-          <div class="col"></div>
+          <div class="col text-start"></div>
         </div>
         {% endif %}
       </div>
     </form>
   </div>
 </div>
+
+<script>
+  const editBtn = document.getElementById("edit-btn");
+  const finishEditBtn = document.getElementById("finish-edit-btn");
+  const form = document.getElementById("job-view-form");
+
+  function setFormDisabled(disabled) {
+    const elements = form.querySelectorAll("input, textarea, select");
+    elements.forEach((el) => {
+      if (el.name !== "csrf_token") {
+        el.disabled = disabled;
+      }
+    });
+  }
+
+  editBtn.addEventListener("click", function () {
+    setFormDisabled(false);
+    editBtn.style.display = "none";
+    finishEditBtn.style.display = "inline-block";
+  });
+
+  finishEditBtn.addEventListener("click", function () {
+    setFormDisabled(true);
+    finishEditBtn.style.display = "none";
+    editBtn.style.display = "inline-block";
+    // Optionally, submit the form here via AJAX or regular POST
+  });
+</script>
 
 {% endblock %}
