@@ -1,65 +1,76 @@
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}Job Application Tracker{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr"
+      crossorigin="anonymous"
+    />
     <style>
-        body {
-            background-color: #212529;
-            color: #fff;
-        }
-        .card {
-            background-color: #343a40;
-            border-color: #495057;
-        }
-        .table-dark {
-            --bs-table-bg: #343a40;
-        }
-        .form-control, .form-select {
-            background-color: #495057;
-            border-color: #6c757d;
-            color: #fff;
-        }
-        .form-control:focus, .form-select:focus {
-            background-color: #495057;
-            border-color: #86b7fe;
-            color: #fff;
-            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-        }
-        .modal-content {
-            background-color: #343a40;
-            color: #fff;
-        }
+      body {
+        background-color: #212529;
+        color: #fff;
+      }
+      .card {
+        background-color: #343a40;
+        border-color: #495057;
+      }
+      .table-dark {
+        --bs-table-bg: #343a40;
+      }
+      .form-control,
+      .form-select {
+        background-color: #495057;
+        border-color: #6c757d;
+        color: #fff;
+      }
+      .form-control:focus,
+      .form-select:focus {
+        background-color: #495057;
+        border-color: #86b7fe;
+        color: #fff;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+      }
+      .modal-content {
+        background-color: #343a40;
+        color: #fff;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('main.index') }}">Job Tracker</a>
-            <div class="navbar-nav">
-                <a class="nav-link" href="{{ url_for('main.index') }}">Home</a>
-                <a class="nav-link" href="">Temp</a>
-            </div>
+      <div class="container">
+        <a class="navbar-brand" href="{{ url_for('main.index') }}"
+          >Job Application Tracker</a
+        >
+        <div class="navbar-nav">
+          <a class="nav-link" href="{{ url_for('main.index') }}">Home</a>
+          <a class="nav-link" href="">Temp</a>
         </div>
+      </div>
     </nav>
 
     <div class="container mt-4">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        {% block content %}{% endblock %}
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %} {% for category, message in messages %}
+      <div
+        class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show"
+        role="alert"
+      >
+        {{ message }}
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="alert"
+        ></button>
+      </div>
+      {% endfor %} {% endif %} {% endwith %} {% block content %}{% endblock %}
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
+  </body>
 </html>
