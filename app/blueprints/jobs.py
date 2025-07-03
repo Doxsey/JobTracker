@@ -40,6 +40,24 @@ class NewJobForm(FlaskForm):
     ])
     submit = SubmitField('Add Job')
 
+class ViewJobForm(FlaskForm):
+    company = StringField('Company', validators=[DataRequired()])
+    title = StringField('Title', validators=[DataRequired()])
+    description = TextAreaField('Description', validators=[DataRequired()])
+    location = StringField('Location', validators=[DataRequired()])
+    salary_range_low = DecimalField('Salary Range Low')
+    salary_range_high = DecimalField('Salary Range High')
+    remote_option = StringField('Remote Option')
+    posting_id = StringField('Posting ID')
+    referrer = StringField('Referrer')
+    referrer_posting_id = StringField('Referrer Posting ID')
+    posting_url = StringField('Posting URL')
+    company_website = StringField('Company Website')
+    created_dt = StringField('Date Created')
+    # job_description_file = StringField('Job Description File')
+    # resume_file = StringField('Resume File')
+    # cover_letter_file = StringField('Cover Letter File')
+    # posting_status = StringField('Posting Status')
 
 @jobs_bp.route('/create', methods=['GET', 'POST'])
 def create():
@@ -264,7 +282,32 @@ def create():
             
             print("Rendering create job form")
             return render_template('jobs/create.html', form=form)
-        
+
+@jobs_bp.route('/<int:job_id>/view', methods=['GET'])
+def view(job_id):
+    form = ViewJobForm()
+    job = Job.query.get_or_404(job_id)
+
+    if form.validate_on_submit():
+        print("Form submitted successfully")
+        company = form.company.data
+        company_website = form.company_website.data
+        title = form.title.data
+        description = form.description.data
+        location = request.form['location']
+        salary_range_low = request.form['salary_range_low']
+        salary_range_high = request.form['salary_range_high']
+        remote_option = request.form['remote_option']
+        posting_url = request.form['posting_url']
+        posting_id = request.form['posting_id']
+        referrer = request.form['referrer']
+        referrer_posting_id = request.form['referrer_posting_id']
+        resume_file = form.resume_file.data
+        job_description_file = form.job_description_file.data
+        cover_letter_file = form.cover_letter_file.data
+
+    return render_template('jobs/view.html', job=job, form=form)
+
 def process_file_upload(file, folder_name):
     """Process file upload with validation and return unique filename or error response"""
     # Validate file type
