@@ -12,7 +12,12 @@ content %}
   <div class="col-md-8">
     <h3>View Job</h3>
     <br />
-    <form id="job-view-form">
+    <form
+      id="job-view-form"
+      action=""
+      method="post"
+      enctype="multipart/form-data"
+    >
       {{ form.hidden_tag() }}
       <div class="container text-center" id="form-container">
         <div class="row mb-2">
@@ -54,12 +59,20 @@ content %}
               <option value="">Select Remote Option</option>
               {% if job.remote_option == "Remote" %}
               <option value="Remote" selected>Remote</option>
+              {% else %}
+              <option value="Remote">Remote</option>
               {% endif %} {% if job.remote_option == "Hybrid" %}
               <option value="Hybrid" selected>Hybrid</option>
+              {% else %}
+              <option value="Hybrid">Hybrid</option>
               {% endif %} {% if job.remote_option == "Onsite" %}
               <option value="Onsite" selected>Onsite</option>
+              {% else %}
+              <option value="Onsite">Onsite</option>
               {% endif %} {% if job.remote_option == "Unknown" %}
               <option value="Unknown" selected>Unknown</option>
+              {% else %}
+              <option value="Unknown">Unknown</option>
               {% endif %}
             </select>
           </div>
@@ -68,8 +81,7 @@ content %}
           <div class="col">
             <div class="mb-3">
               <label for="description">{{ form.description.label.text }}</label>
-              <!-- prettier-ignore -->
-              {{ form.description(rows=3, class="form-control", value=job.description, disabled=true,
+              {{ form.description(rows=3, class="form-control", disabled=true,
               id="description") }}
             </div>
           </div>
@@ -140,65 +152,53 @@ content %}
 
         {% if job.resume_file or job.cover_letter_file or
         job.job_description_file %}
-        <div class="row">
-          <div class="col d-flex justify-content-start">
-            <div class="col d-flex justify-content-start">
-              <button type="button" id="edit-btn" class="btn btn-secondary">
-                Edit Job
-              </button>
-              <button
-                type="button"
-                id="finish-edit-btn"
-                class="btn btn-success"
-                style="display: none"
-              >
-                Save Changes
-              </button>
-            </div>
+        <div class="row-md-auto d-flex justify-content-start">
+          <button type="button" id="edit-btn" class="btn btn-primary me-3">
+            Edit Job
+          </button>
 
-            <div class="col d-flex justify-content-start">
-              <div class="dropdown">
+          {{ form.submit(class="btn btn-success me-3", id="finish-edit-btn",
+          style="display: none") }}
+
+          <div class="dropdown">
+            <a
+              class="btn btn-primary dropdown-toggle me-3"
+              href="#"
+              role="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              Available Files
+            </a>
+
+            <ul class="dropdown-menu">
+              {% if job.resume_file %}
+              <li>
                 <a
-                  class="btn btn-secondary dropdown-toggle"
-                  href="#"
-                  role="button"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
+                  class="dropdown-item"
+                  href="{{ url_for('download.download_file', job_id=job.id, file_type='resume') }}"
+                  >Resume</a
                 >
-                  Available Files
-                </a>
-
-                <ul class="dropdown-menu">
-                  {% if job.resume_file %}
-                  <li>
-                    <a
-                      class="dropdown-item"
-                      href="{{ url_for('download.download_file', job_id=job.id, file_type='resume') }}"
-                      >Resume</a
-                    >
-                  </li>
-                  {% endif %} {% if job.job_description_file %}
-                  <li>
-                    <a
-                      class="dropdown-item"
-                      href="{{ url_for('download.download_file', job_id=job.id, file_type='job_description') }}"
-                      >Job Description</a
-                    >
-                  </li>
-                  {% endif %} {% if job.cover_letter_file %}
-                  <li>
-                    <a
-                      class="dropdown-item"
-                      href="{{ url_for('download.download_file', job_id=job.id, file_type='cover_letter') }}"
-                      >Cover Letter</a
-                    >
-                  </li>
-                  {% endif %}
-                </ul>
-              </div>
-            </div>
+              </li>
+              {% endif %} {% if job.job_description_file %}
+              <li>
+                <a
+                  class="dropdown-item"
+                  href="{{ url_for('download.download_file', job_id=job.id, file_type='job_description') }}"
+                  >Job Description</a
+                >
+              </li>
+              {% endif %} {% if job.cover_letter_file %}
+              <li>
+                <a
+                  class="dropdown-item"
+                  href="{{ url_for('download.download_file', job_id=job.id, file_type='cover_letter') }}"
+                  >Cover Letter</a
+                >
+              </li>
+              {% endif %}
+            </ul>
           </div>
-          <div class="col text-start"></div>
         </div>
         {% endif %}
       </div>
@@ -226,12 +226,14 @@ content %}
     finishEditBtn.style.display = "inline-block";
   });
 
+  /*
   finishEditBtn.addEventListener("click", function () {
     setFormDisabled(true);
     finishEditBtn.style.display = "none";
     editBtn.style.display = "inline-block";
     // Optionally, submit the form here via AJAX or regular POST
   });
+  */
 </script>
 
 {% endblock %}

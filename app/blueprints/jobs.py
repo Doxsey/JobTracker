@@ -58,6 +58,7 @@ class ViewJobForm(FlaskForm):
     # resume_file = StringField('Resume File')
     # cover_letter_file = StringField('Cover Letter File')
     # posting_status = StringField('Posting Status')
+    submit = SubmitField('Save Changes')
 
 @jobs_bp.route('/create', methods=['GET', 'POST'])
 def create():
@@ -283,28 +284,42 @@ def create():
             print("Rendering create job form")
             return render_template('jobs/create.html', form=form)
 
-@jobs_bp.route('/<int:job_id>/view', methods=['GET'])
+@jobs_bp.route('/<int:job_id>/view', methods=['GET', 'POST'])
 def view(job_id):
+
     form = ViewJobForm()
     job = Job.query.get_or_404(job_id)
 
-    if form.validate_on_submit():
-        print("Form submitted successfully")
-        company = form.company.data
-        company_website = form.company_website.data
-        title = form.title.data
-        description = form.description.data
-        location = request.form['location']
-        salary_range_low = request.form['salary_range_low']
-        salary_range_high = request.form['salary_range_high']
-        remote_option = request.form['remote_option']
-        posting_url = request.form['posting_url']
-        posting_id = request.form['posting_id']
-        referrer = request.form['referrer']
-        referrer_posting_id = request.form['referrer_posting_id']
-        resume_file = form.resume_file.data
-        job_description_file = form.job_description_file.data
-        cover_letter_file = form.cover_letter_file.data
+    if request.method == 'GET':
+        form.description.data = job.description
+        print("GET request for job view")
+        return render_template('jobs/view.html', job=job, form=form)
+
+    if request.method == 'POST':
+        print("POST request for job view")
+
+        if form.validate_on_submit():
+            print("Form submitted successfully")
+            job.company = form.company.data
+            job.company_website = form.company_website.data
+            job.title = form.title.data
+            job.description = form.description.data
+            job.location = request.form['location']
+            job.salary_range_low = request.form['salary_range_low']
+            job.salary_range_high = request.form['salary_range_high']
+            job.remote_option = request.form['remote_option']
+            job.posting_url = request.form['posting_url']
+            job.posting_id = request.form['posting_id']
+            job.referrer = request.form['referrer']
+            job.referrer_posting_id = request.form['referrer_posting_id']
+            
+            try:
+                db.session.commit()
+                flash('Job updated successfully!', 'success')
+            except Exception as e:
+                print(f"Error updating job: {e}")
+                db.session.rollback()
+                flash('Error updating job!', 'error')
 
     return render_template('jobs/view.html', job=job, form=form)
 
