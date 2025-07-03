@@ -36,7 +36,7 @@ def create_app():
     from app.blueprints.job_notes import job_notes_bp
     from app.blueprints.job_activities import job_activities_bp
     from app.blueprints.select_activity import select_activity_bp
-    from app.blueprints.download import files_bp
+    from app.blueprints.files import files_bp
     
     app.register_blueprint(main_bp)
     app.register_blueprint(jobs_bp, url_prefix='/jobs')
