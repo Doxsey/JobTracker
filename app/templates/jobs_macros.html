@@ -186,4 +186,30 @@ job.notes|length > 0 %}
   </div>
 </div>
 
+{% endmacro %} {% macro file_edit_card(job, file_type) %}
+
+<div class="col-md-3 me-3" id="file-{{ file_type }}">
+  <div class="card">
+    <div class="card-body">
+      <h5 class="card-title">
+        <i class="fas fa-file me-2"></i>
+        {{ file_type }}
+      </h5>
+
+      <div class="d-flex justify-content-between">
+        <a href="#" class="btn btn-primary btn-sm">
+          <i class="fas fa-exchange-alt"></i> Replace
+        </a>
+        <button
+          class="btn btn-danger btn-sm delete-btn"
+          data-file-id="1"
+          data-filename="filename"
+        >
+          <i class="fas fa-trash"></i> Delete
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endmacro %}

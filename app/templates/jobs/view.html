@@ -1,5 +1,5 @@
-{% extends "base.html" %} {% block title %}View Job{% endblock %} {% block
-content %}
+{% from "jobs_macros.html" import file_edit_card %} {% extends "base.html" %} {%
+block title %}View Job{% endblock %} {% block content %}
 
 <style>
   label {
@@ -10,7 +10,7 @@ content %}
 
 <div class="row justify-content-center">
   <div class="col-md-8">
-    <h3>View Job</h3>
+    <h5 id="page-heading">View Job</h5>
     <br />
     <form
       id="job-view-form"
@@ -209,6 +209,17 @@ content %}
             </ul>
           </div>
         </div>
+
+        <div
+          class="row-md-auto d-flex justify-content-start mt-3 d-none"
+          id="edit-files-container"
+        >
+          {% if job.resume_file %} {{ file_edit_card(job, 'Resume') }} {% endif
+          %} {% if job.cover_letter_file %} {{ file_edit_card(job, 'Cover
+          Letter') }} {% endif %} {% if job.job_description_file %} {{
+          file_edit_card(job, 'Job Description') }} {% endif %}
+        </div>
+
         {% endif %}
       </div>
     </form>
@@ -220,6 +231,9 @@ content %}
   const finishEditBtn = document.getElementById("finish-edit-btn");
   const cancelEditBtn = document.getElementById("cancel-edit-btn");
   const fileDropdown = document.getElementById("file-dropdown");
+  const fileEditContainer = document.getElementById("edit-files-container");
+  const pageHeading = document.getElementById("page-heading");
+
   const form = document.getElementById("job-view-form");
 
   function setFormDisabled(disabled) {
@@ -237,6 +251,9 @@ content %}
     fileDropdown.style.display = "none";
     finishEditBtn.style.display = "inline-block";
     cancelEditBtn.style.display = "inline-block";
+    fileEditContainer.classList.remove("d-none");
+    pageHeading.textContent = "Editing Job";
+    pageHeading.classList.add("text-warning");
   });
 
   cancelEditBtn.addEventListener("click", function () {
