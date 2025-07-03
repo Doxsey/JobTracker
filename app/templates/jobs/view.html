@@ -1,5 +1,5 @@
-{% from "jobs_macros.html" import file_edit_card %} {% extends "base.html" %} {%
-block title %}View Job{% endblock %} {% block content %}
+{% from "jobs_macros.html" import file_edit_card %} {% extends "base.html" %} {% block title %}View Job{% endblock %} {%
+block content %}
 
 <style>
   label {
@@ -12,40 +12,31 @@ block title %}View Job{% endblock %} {% block content %}
   <div class="col-md-8">
     <h5 id="page-heading">View Job</h5>
     <br />
-    <form
-      id="job-view-form"
-      action=""
-      method="post"
-      enctype="multipart/form-data"
-    >
+    <form id="job-view-form" action="" method="post" enctype="multipart/form-data">
       {{ form.hidden_tag() }}
       <div class="container text-center" id="form-container">
         <div class="row mb-2">
           <div class="col text-start">
             <strong>Created:</strong>
-            {{ job.created_dt.strftime('%Y-%m-%d %H:%M') if job.created_dt else
-            '' }}
+            {{ job.created_dt.strftime('%Y-%m-%d %H:%M') if job.created_dt else '' }}
           </div>
         </div>
 
         <div class="row">
           <div class="col">
             <label for="company">{{ form.company.label.text }}</label>
-            {{ form.company(size=32, class="form-control", value=job.company,
-            disabled=true, id="company") }}
+            {{ form.company(size=32, class="form-control", value=job.company, disabled=true, id="company") }}
             <br />
           </div>
           <div class="col">
             <label for="title">{{ form.title.label.text }}</label>
-            {{ form.title(size=32, class="form-control", value=job.title,
-            disabled=true, id="title") }}
+            {{ form.title(size=32, class="form-control", value=job.title, disabled=true, id="title") }}
           </div>
         </div>
         <div class="row">
           <div class="col">
             <label for="location">{{ form.location.label.text }}</label>
-            {{ form.location(size=32, class="form-control", value=job.location,
-            disabled=true, id="location") }}
+            {{ form.location(size=32, class="form-control", value=job.location, disabled=true, id="location") }}
           </div>
           <div class="col">
             <label for="remote_option">Remote Option</label>
@@ -81,41 +72,32 @@ block title %}View Job{% endblock %} {% block content %}
           <div class="col">
             <div class="mb-3">
               <label for="description">{{ form.description.label.text }}</label>
-              {{ form.description(rows=3, class="form-control", disabled=true,
-              id="description") }}
+              {{ form.description(rows=3, class="form-control", disabled=true, id="description") }}
             </div>
           </div>
         </div>
         <div class="row">
           <div class="col">
-            <label for="salary_range_low"
-              >{{ form.salary_range_low.label.text }}</label
-            >
-            {{ form.salary_range_low(size=32, class="form-control",
-            value=job.salary_range_low, disabled=true, id="salary_range_low") }}
+            <label for="salary_range_low">{{ form.salary_range_low.label.text }}</label>
+            {{ form.salary_range_low(size=32, class="form-control", value=job.salary_range_low, disabled=true,
+            id="salary_range_low") }}
             <br />
           </div>
           <div class="col">
-            <label for="salary_range_high"
-              >{{ form.salary_range_high.label.text }}</label
-            >
-            {{ form.salary_range_high(size=32, class="form-control",
-            value=job.salary_range_high, disabled=true, id="salary_range_high")
-            }}
+            <label for="salary_range_high">{{ form.salary_range_high.label.text }}</label>
+            {{ form.salary_range_high(size=32, class="form-control", value=job.salary_range_high, disabled=true,
+            id="salary_range_high") }}
           </div>
         </div>
         <div class="row">
           <div class="col">
-            <label for="company_website"
-              >{{ form.company_website.label.text }}</label
-            >
-            {{ form.company_website(size=32, class="form-control",
-            value=job.company_website, disabled=true, id="company_website") }}
+            <label for="company_website">{{ form.company_website.label.text }}</label>
+            {{ form.company_website(size=32, class="form-control", value=job.company_website, disabled=true,
+            id="company_website") }}
           </div>
           <div class="col">
             <label for="posting_id">{{ form.posting_id.label.text }}</label>
-            {{ form.posting_id(size=32, class="form-control",
-            value=job.posting_id, disabled=true, id="posting_id") }}
+            {{ form.posting_id(size=32, class="form-control", value=job.posting_id, disabled=true, id="posting_id") }}
           </div>
         </div>
         <br />
@@ -128,44 +110,38 @@ block title %}View Job{% endblock %} {% block content %}
         <div class="row">
           <div class="col">
             <label for="referrer">{{ form.referrer.label.text }}</label>
-            {{ form.referrer(size=32, class="form-control", value=job.referrer,
-            disabled=true, id="referrer") }}
+            {{ form.referrer(size=32, class="form-control", value=job.referrer, disabled=true, id="referrer") }}
             <br />
           </div>
           <div class="col">
-            <label for="referrer_posting_id"
-              >{{ form.referrer_posting_id.label.text }}</label
-            >
-            {{ form.referrer_posting_id(size=32, class="form-control",
-            value=job.referrer_posting_id, disabled=true,
+            <label for="referrer_posting_id">{{ form.referrer_posting_id.label.text }}</label>
+            {{ form.referrer_posting_id(size=32, class="form-control", value=job.referrer_posting_id, disabled=true,
             id="referrer_posting_id") }}
           </div>
         </div>
         <div class="row">
           <div class="col">
             <label for="posting_url">{{ form.posting_url.label.text }}</label>
-            {{ form.posting_url(size=32, class="form-control",
-            value=job.posting_url, disabled=true, id="posting_url") }}
+            {{ form.posting_url(size=32, class="form-control", value=job.posting_url, disabled=true, id="posting_url")
+            }}
             <br />
           </div>
         </div>
 
-        {% if job.resume_file or job.cover_letter_file or
-        job.job_description_file %}
+        {% if job.resume_file or job.cover_letter_file or job.job_description_file %} {# TODO: add a dropdown button to
+        each with an action. need current buttons and an upload button for all file types #}
+        <div class="row-md-auto d-flex justify-content-start mb-3 d-none" id="edit-files-container">
+          {% if job.resume_file %} {{ file_edit_card(job, 'resume', 'Resume') }} {% endif %} {% if job.cover_letter_file
+          %} {{ file_edit_card(job, 'cover_letter', 'Cover Letter') }} {% endif %} {% if job.job_description_file %} {{
+          file_edit_card(job, 'job_description', 'Job Description') }} {% endif %}
+        </div>
+
         <div class="row-md-auto d-flex justify-content-start">
-          <button type="button" id="edit-btn" class="btn btn-primary me-3">
-            Edit Job
-          </button>
+          <button type="button" id="edit-btn" class="btn btn-primary me-3">Edit Job</button>
 
-          {{ form.submit(class="btn btn-success me-3", id="finish-edit-btn",
-          style="display: none") }}
+          {{ form.submit(class="btn btn-success me-3", id="finish-edit-btn", style="display: none") }}
 
-          <button
-            type="button"
-            id="cancel-edit-btn"
-            class="btn btn-danger me-3"
-            style="display: none"
-          >
+          <button type="button" id="cancel-edit-btn" class="btn btn-danger me-3" style="display: none">
             Cancel Edit
           </button>
 
@@ -177,47 +153,37 @@ block title %}View Job{% endblock %} {% block content %}
               data-bs-toggle="dropdown"
               aria-expanded="false"
             >
-              Available Files
+              Download Files
             </a>
 
             <ul class="dropdown-menu">
               {% if job.resume_file %}
               <li>
-                <a
-                  class="dropdown-item"
-                  href="{{ url_for('files.download_file', job_id=job.id, file_type='resume') }}"
-                  >Resume</a
-                >
+                <a class="dropdown-item" href="{{ url_for('files.download_file', job_id=job.id, file_type='resume') }}">
+                  Resume
+                </a>
               </li>
               {% endif %} {% if job.job_description_file %}
               <li>
                 <a
                   class="dropdown-item"
                   href="{{ url_for('files.download_file', job_id=job.id, file_type='job_description') }}"
-                  >Job Description</a
                 >
+                  Job Description
+                </a>
               </li>
               {% endif %} {% if job.cover_letter_file %}
               <li>
                 <a
                   class="dropdown-item"
                   href="{{ url_for('files.download_file', job_id=job.id, file_type='cover_letter') }}"
-                  >Cover Letter</a
                 >
+                  Cover Letter
+                </a>
               </li>
               {% endif %}
             </ul>
           </div>
-        </div>
-
-        <div
-          class="row-md-auto d-flex justify-content-start mt-3 d-none"
-          id="edit-files-container"
-        >
-          {% if job.resume_file %} {{ file_edit_card(job, 'Resume') }} {% endif
-          %} {% if job.cover_letter_file %} {{ file_edit_card(job, 'Cover
-          Letter') }} {% endif %} {% if job.job_description_file %} {{
-          file_edit_card(job, 'Job Description') }} {% endif %}
         </div>
 
         {% endif %}
@@ -233,6 +199,9 @@ block title %}View Job{% endblock %} {% block content %}
   const fileDropdown = document.getElementById("file-dropdown");
   const fileEditContainer = document.getElementById("edit-files-container");
   const pageHeading = document.getElementById("page-heading");
+
+  const deleteResumeBtn = document.getElementById("delete-resume-btn");
+  const replaceResumeBtn = document.getElementById("replace-resume-btn");
 
   const form = document.getElementById("job-view-form");
 
@@ -254,6 +223,16 @@ block title %}View Job{% endblock %} {% block content %}
     fileEditContainer.classList.remove("d-none");
     pageHeading.textContent = "Editing Job";
     pageHeading.classList.add("text-warning");
+  });
+
+  deleteResumeBtn.addEventListener("click", function () {
+    // Add your delete logic here
+    console.log("Delete Resume Button clicked");
+  });
+
+  replaceResumeBtn.addEventListener("click", function () {
+    // Add your replace logic here
+    console.log("Replace Resume Button clicked");
   });
 
   cancelEditBtn.addEventListener("click", function () {

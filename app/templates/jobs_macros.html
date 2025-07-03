@@ -5,8 +5,7 @@
     <label for="{{ file_field.id }}">{{ label }}:</label>
   </div>
   <div class="col-9 d-flex align-items-left">
-    {{ file_field(class="form-control", accept=".pdf,.docx,.doc,.tex",
-    style="width:100%; display:inline-block;") }}
+    {{ file_field(class="form-control", accept=".pdf,.docx,.doc,.tex", style="width:100%; display:inline-block;") }}
 
     <!-- Display validation errors -->
     {% if file_field.errors %} {% for error in file_field.errors %}
@@ -15,14 +14,9 @@
   </div>
 </div>
 
-{% endmacro %} {% macro job_row_with_additional_info(job) %} {% set
-has_activities = job.activities|length > 0 %} {% set has_notes =
-job.notes|length > 0 %}
-<tr
-  class="clickable-row"
-  data-bs-target="#details-{{ job.id }}"
-  aria-expanded="false"
->
+{% endmacro %} {% macro job_row_with_additional_info(job) %} {% set has_activities = job.activities|length > 0 %} {% set
+has_notes = job.notes|length > 0 %}
+<tr class="clickable-row" data-bs-target="#details-{{ job.id }}" aria-expanded="false">
   <td><i class="expand-icon">▼</i></td>
   <td>{{ job.company }}</td>
   <td>{{ job.title }}</td>
@@ -44,7 +38,8 @@ job.notes|length > 0 %}
           data-bs-target="#activities-{{ job.id }}"
           aria-expanded="false"
         >
-          <i class="nested-expand-icon">▼</i> Activities
+          <i class="nested-expand-icon">▼</i>
+          Activities
         </button>
 
         {% endif %} {% if has_notes %}
@@ -54,7 +49,8 @@ job.notes|length > 0 %}
           data-bs-target="#notes-{{ job.id }}"
           aria-expanded="false"
         >
-          <i class="nested-expand-icon">▼</i> Notes
+          <i class="nested-expand-icon">▼</i>
+          Notes
         </button>
 
         {% endif %}
@@ -133,35 +129,18 @@ job.notes|length > 0 %}
 
 {% endmacro %} {% macro action_buttons(job) %}
 <div class="dropdown">
-  <button
-    class="btn btn-primary dropdown-toggle btn-sm"
-    type="button"
-    data-bs-toggle="dropdown"
-    aria-expanded="false"
-  >
+  <button class="btn btn-primary dropdown-toggle btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
     Actions
   </button>
   <ul class="dropdown-menu">
     <li>
-      <a
-        class="dropdown-item"
-        data-href="{{ url_for('job_activities.create', job_id=job.id) }}"
-        >Add Activity</a
-      >
+      <a class="dropdown-item" data-href="{{ url_for('job_activities.create', job_id=job.id) }}">Add Activity</a>
     </li>
     <li>
-      <a
-        class="dropdown-item"
-        data-href="{{ url_for('job_notes.create', job_id=job.id) }}"
-        >Add Note</a
-      >
+      <a class="dropdown-item" data-href="{{ url_for('job_notes.create', job_id=job.id) }}">Add Note</a>
     </li>
     <li>
-      <a
-        class="dropdown-item"
-        data-href="{{ url_for('jobs.view', job_id=job.id) }}"
-        >View Job</a
-      >
+      <a class="dropdown-item" data-href="{{ url_for('jobs.view', job_id=job.id) }}">View Job</a>
     </li>
   </ul>
 </div>
@@ -170,42 +149,56 @@ job.notes|length > 0 %}
 <div class="card card-body sub-detail-row">
   <div class="row">
     <div class="col-md-4">
-      <p><strong>Company:</strong> {{ job.company }}</p>
-      <p><strong>Title:</strong> {{ job.title }}</p>
-    </div>
-    <div class="col-md-4">
-      <p><strong>Location:</strong> {{ job.location }}</p>
-      <p><strong>Remote Option:</strong> {{ job.remote_option }}</p>
+      <p>
+        <strong>Company:</strong>
+        {{ job.company }}
+      </p>
+      <p>
+        <strong>Title:</strong>
+        {{ job.title }}
+      </p>
     </div>
     <div class="col-md-4">
       <p>
-        <strong>Date Created:</strong> {{ job.created_dt.strftime('%Y-%m-%d') }}
+        <strong>Location:</strong>
+        {{ job.location }}
       </p>
-      <p><strong>Job ID:</strong> {{ job.id }}</p>
+      <p>
+        <strong>Remote Option:</strong>
+        {{ job.remote_option }}
+      </p>
+    </div>
+    <div class="col-md-4">
+      <p>
+        <strong>Date Created:</strong>
+        {{ job.created_dt.strftime('%Y-%m-%d') }}
+      </p>
+      <p>
+        <strong>Job ID:</strong>
+        {{ job.id }}
+      </p>
     </div>
   </div>
 </div>
 
-{% endmacro %} {% macro file_edit_card(job, file_type) %}
+{% endmacro %} {% macro file_edit_card(job, file_type, file_description) %}
 
 <div class="col-md-3 me-3" id="file-{{ file_type }}">
   <div class="card">
     <div class="card-body">
       <h5 class="card-title">
-        <i class="fas fa-file me-2"></i>
-        {{ file_type }}
+        <i class="bi bi-file-earmark me-2"></i>
+        {{ file_description }}
       </h5>
 
       <div class="d-flex justify-content-between">
-        <a href="#" class="btn btn-primary btn-sm">
-          <i class="fas fa-exchange-alt"></i> Replace
-        </a>
-        <button
-          class="btn btn-danger btn-sm delete-btn"
-          data-file-id="1"
-          data-filename="filename"
-        >
-          <i class="fas fa-trash"></i> Delete
+        <button type="button" class="btn btn-primary btn-sm replace-btn" id="replace-{{ file_type }}-btn">
+          <i class="bi bi-arrow-left-right"></i>
+          Replace
+        </button>
+        <button type="button" class="btn btn-danger btn-sm delete-btn" id="delete-{{ file_type }}-btn">
+          <i class="bi bi-trash"></i>
+          Delete
         </button>
       </div>
     </div>
