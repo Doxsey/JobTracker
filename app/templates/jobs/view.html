@@ -1,5 +1,5 @@
-{% from "jobs_macros.html" import file_edit_card %} {% extends "base.html" %} {% block title %}View Job{% endblock %} {%
-block content %}
+{% from "jobs_macros.html" import file_edit_card, file_add_card %} {% extends "base.html" %} {% block title %}View Job{%
+endblock %} {% block content %}
 
 <style>
   label {
@@ -128,13 +128,15 @@ block content %}
           </div>
         </div>
 
-        {% if job.resume_file or job.cover_letter_file or job.job_description_file %} {# TODO: add a dropdown button to
-        each with an action. need current buttons and an upload button for all file types #}
+        {% if job.resume_file or job.cover_letter_file or job.job_description_file %}
         <div class="row-md-auto d-flex justify-content-start mb-3 d-none" id="edit-files-container">
-          {% if job.resume_file %} {{ file_edit_card(job, 'resume', 'Resume') }} {% endif %} {% if job.cover_letter_file
-          %} {{ file_edit_card(job, 'cover_letter', 'Cover Letter') }} {% endif %} {% if job.job_description_file %} {{
-          file_edit_card(job, 'job_description', 'Job Description') }} {% endif %}
+          {% if job.resume_file %} {{ file_edit_card(job, 'resume', 'Resume') }} {% else %} {{ file_add_card(job,
+          'resume', 'Resume') }} {% endif %} {% if job.cover_letter_file%} {{ file_edit_card(job, 'cover_letter', 'Cover
+          Letter') }} {% else %} {{ file_add_card(job, 'cover_letter', 'Cover Letter') }} {% endif %} {% if
+          job.job_description_file %} {{ file_edit_card(job, 'job_description', 'Job Description') }} {% else %} {{
+          file_add_card(job, 'job_description', 'Job Description') }} {% endif %}
         </div>
+        {% endif %}
 
         <div class="row-md-auto d-flex justify-content-start">
           <button type="button" id="edit-btn" class="btn btn-primary me-3">Edit Job</button>
@@ -145,6 +147,7 @@ block content %}
             Cancel Edit
           </button>
 
+          {% if job.resume_file or job.cover_letter_file or job.job_description_file %}
           <div class="dropdown" id="file-dropdown">
             <a
               class="btn btn-primary dropdown-toggle me-3"
@@ -184,60 +187,24 @@ block content %}
               {% endif %}
             </ul>
           </div>
+          {% endif %}
         </div>
-
-        {% endif %}
       </div>
     </form>
   </div>
 </div>
 
+<script src="{{ url_for('static', filename='js/view-job.js') }}"></script>
+
 <script>
-  const editBtn = document.getElementById("edit-btn");
-  const finishEditBtn = document.getElementById("finish-edit-btn");
-  const cancelEditBtn = document.getElementById("cancel-edit-btn");
-  const fileDropdown = document.getElementById("file-dropdown");
-  const fileEditContainer = document.getElementById("edit-files-container");
-  const pageHeading = document.getElementById("page-heading");
-
-  const deleteResumeBtn = document.getElementById("delete-resume-btn");
-  const replaceResumeBtn = document.getElementById("replace-resume-btn");
-
-  const form = document.getElementById("job-view-form");
-
-  function setFormDisabled(disabled) {
-    const elements = form.querySelectorAll("input, textarea, select");
-    elements.forEach((el) => {
-      if (el.name !== "csrf_token") {
-        el.disabled = disabled;
-      }
-    });
+  const jobViewData = {
+    job_id: {{ job.id }},
+    resume_file: "{{ job.resume_file }}",
+    cover_letter_file: "{{ job.cover_letter_file }}",
+    job_description_file: "{{ job.job_description_file }}",
+    delete_file_url: "{{ url_for('files.delete_file') }}",
   }
-
-  editBtn.addEventListener("click", function () {
-    setFormDisabled(false);
-    editBtn.style.display = "none";
-    fileDropdown.style.display = "none";
-    finishEditBtn.style.display = "inline-block";
-    cancelEditBtn.style.display = "inline-block";
-    fileEditContainer.classList.remove("d-none");
-    pageHeading.textContent = "Editing Job";
-    pageHeading.classList.add("text-warning");
-  });
-
-  deleteResumeBtn.addEventListener("click", function () {
-    // Add your delete logic here
-    console.log("Delete Resume Button clicked");
-  });
-
-  replaceResumeBtn.addEventListener("click", function () {
-    // Add your replace logic here
-    console.log("Replace Resume Button clicked");
-  });
-
-  cancelEditBtn.addEventListener("click", function () {
-    location.reload(true);
-  });
+  new JobView(jobViewData);
 </script>
 
 {% endblock %}

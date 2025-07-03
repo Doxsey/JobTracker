@@ -205,4 +205,24 @@ has_notes = job.notes|length > 0 %}
   </div>
 </div>
 
+{% endmacro %} {% macro file_add_card(job, file_type, file_description) %}
+
+<div class="col-md-3 me-3" id="file-{{ file_type }}">
+  <div class="card">
+    <div class="card-body">
+      <h5 class="card-title">
+        <i class="bi bi-file-earmark me-2"></i>
+        {{ file_description }}
+      </h5>
+
+      <div class="d-flex justify-content-between">
+        <button type="button" class="btn btn-info btn-sm replace-btn" id="upload-{{ file_type }}-btn">
+          <i class="bi bi-upload"></i>
+          Upload
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endmacro %}
