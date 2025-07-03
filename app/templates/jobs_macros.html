@@ -156,6 +156,13 @@ job.notes|length > 0 %}
         >Add Note</a
       >
     </li>
+    <li>
+      <a
+        class="dropdown-item"
+        data-href="{{ url_for('jobs.view', job_id=job.id) }}"
+        >View Job</a
+      >
+    </li>
   </ul>
 </div>
 
