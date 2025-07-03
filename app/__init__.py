@@ -36,14 +36,14 @@ def create_app():
     from app.blueprints.job_notes import job_notes_bp
     from app.blueprints.job_activities import job_activities_bp
     from app.blueprints.select_activity import select_activity_bp
-    from app.blueprints.download import download_bp
+    from app.blueprints.download import files_bp
     
     app.register_blueprint(main_bp)
     app.register_blueprint(jobs_bp, url_prefix='/jobs')
     app.register_blueprint(job_notes_bp, url_prefix='/job_notes')
     app.register_blueprint(job_activities_bp, url_prefix='/job_activities')
     app.register_blueprint(select_activity_bp, url_prefix='/select_activity')
-    app.register_blueprint(download_bp, url_prefix='/download')
+    app.register_blueprint(files_bp, url_prefix='/files')
 
     # Create database tables
     with app.app_context():

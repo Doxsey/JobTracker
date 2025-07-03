@@ -185,7 +185,7 @@ content %}
               <li>
                 <a
                   class="dropdown-item"
-                  href="{{ url_for('download.download_file', job_id=job.id, file_type='resume') }}"
+                  href="{{ url_for('files.download_file', job_id=job.id, file_type='resume') }}"
                   >Resume</a
                 >
               </li>
@@ -193,7 +193,7 @@ content %}
               <li>
                 <a
                   class="dropdown-item"
-                  href="{{ url_for('download.download_file', job_id=job.id, file_type='job_description') }}"
+                  href="{{ url_for('files.download_file', job_id=job.id, file_type='job_description') }}"
                   >Job Description</a
                 >
               </li>
@@ -201,7 +201,7 @@ content %}
               <li>
                 <a
                   class="dropdown-item"
-                  href="{{ url_for('download.download_file', job_id=job.id, file_type='cover_letter') }}"
+                  href="{{ url_for('files.download_file', job_id=job.id, file_type='cover_letter') }}"
                   >Cover Letter</a
                 >
               </li>

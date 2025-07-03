@@ -3,9 +3,9 @@ from app import db
 from app.models import Job
 import os
 
-download_bp = Blueprint('download', __name__)
+files_bp = Blueprint('files', __name__)
 
-@download_bp.route('/<int:job_id>/<file_type>')
+@files_bp.route('/<int:job_id>/<file_type>')
 def download_file(job_id, file_type):
     job = Job.query.get(job_id)
     if not job:
@@ -66,3 +66,4 @@ def download_file(job_id, file_type):
         as_attachment=True,
         download_name=new_filename
     )
+
