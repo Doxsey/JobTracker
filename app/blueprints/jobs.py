@@ -323,6 +323,11 @@ def view(job_id):
 
     return render_template('jobs/view.html', job=job, form=form)
 
+@jobs_bp.route('/<int:job_id>/file-cards', methods=['GET', 'POST'])
+def file_cards(job_id):
+    job = Job.query.get_or_404(job_id)
+    return render_template('jobs/file_cards_partial.html', job=job)
+
 def process_file_upload(file, folder_name):
     """Process file upload with validation and return unique filename or error response"""
     # Validate file type

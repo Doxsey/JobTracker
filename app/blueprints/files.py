@@ -104,8 +104,15 @@ def delete_file():
                     os.remove(file_path)
                 except Exception as e:
                     return jsonify({'error': f'Error deleting file from drive: {str(e)}'}), 400
-                
-            return jsonify({'message': 'File deleted successfully.'}), 200
+            
+            response = {
+                'success': True,
+                'message': 'File deleted successfully.',
+                'job_id': job_id,
+                'file_name': file_name
+            }
+
+            return jsonify(response), 200
 
         except json.JSONDecodeError:
                 return jsonify({'error': 'Invalid JSON data'}), 400

@@ -19,6 +19,10 @@ class JobView {
   setupEventListeners() {
     this.editBtn.addEventListener("click", this.onEdit.bind(this));
     this.cancelEditBtn.addEventListener("click", this.onCancelEdit.bind(this));
+    this.confirmDeleteBtn.addEventListener(
+      "click",
+      this.onConfirmDelete.bind(this)
+    );
 
     if (this.deleteResumeBtn) {
       this.deleteResumeBtn.addEventListener(
@@ -65,6 +69,8 @@ class JobView {
     this.fileDropdown = document.getElementById("file-dropdown");
     this.fileEditContainer = document.getElementById("edit-files-container");
     this.pageHeading = document.getElementById("page-heading");
+    this.confirmDeleteModal = document.getElementById("deleteModal");
+    this.confirmDeleteBtn = document.getElementById("confirm-delete-btn");
 
     this.deleteResumeBtn = document.getElementById("delete-resume-btn");
     this.deleteCoverLetterBtn = document.getElementById(
@@ -142,7 +148,34 @@ class JobView {
     console.log("Replace Resume Button clicked");
   }
 
+  onReplaceCoverLetter() {
+    // Add your replace logic here
+    console.log("Replace Cover Letter Button clicked");
+  }
+
+  onReplaceJobDescription() {
+    // Add your replace logic here
+    console.log("Replace Job Description Button clicked");
+  }
+
+  onConfirmDelete() {
+    console.log("Confirm Delete Button clicked");
+    // const jobId = this.jobViewData.job_id;
+    // const fileName = this.jobViewData.file_name; // Assuming you have the file name in jobViewData
+    // const fileDescription = this.jobViewData.file_description; // Assuming you have the file description in jobViewData
+
+    // this.deleteFile(jobId, fileName, fileDescription);
+  }
+
   deleteFile(job_id, file_name, file_description) {
+    // this.confirmDeleteModal.classList.add("active");
+    var modal = new bootstrap.Modal(
+      document.getElementById("confirmDeleteModal")
+    );
+    modal.show();
+
+    return;
+
     fetch(this.jobViewData.delete_file_url, {
       method: "POST",
       headers: {
@@ -155,25 +188,23 @@ class JobView {
     })
       .then((response) => response.json())
       .then((data) => {
-        // reload the file cards section
-        fetch(window.location.href, {
-          headers: { "X-Requested-With": "XMLHttpRequest" },
-        })
-          .then((response) => response.text())
-          .then((html) => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, "text/html");
-            const newFilesContainer = doc.getElementById(
-              "edit-files-container"
-            );
-            const currentFilesContainer = document.getElementById(
-              "edit-files-container"
-            );
-            if (newFilesContainer && currentFilesContainer) {
-              currentFilesContainer.innerHTML = newFilesContainer.innerHTML;
-            }
-          });
-        //location.reload();
+        console.log("Response from deleteFile:", data);
+        if (data.success) {
+          console.log("Inside of deleteFile() success block");
+          // Fetch updated file cards
+          fetch(`/jobs/${this.jobViewData.job_id}/file-cards`)
+            .then((response) => response.text())
+            .then((html) => {
+              const container = document.getElementById("edit-files-container");
+              container.innerHTML = html;
+
+              // Re-cache DOM elements and setup event listeners for new buttons
+              this.cacheDomElements();
+              this.setupEventListeners();
+            });
+        } else {
+          console.error("Error deleting file:", data.error);
+        }
       })
       .catch((error) => {
         console.error(`Error deleting ${file_description}:`, error);
