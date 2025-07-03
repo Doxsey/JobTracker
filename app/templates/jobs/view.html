@@ -160,7 +160,16 @@ content %}
           {{ form.submit(class="btn btn-success me-3", id="finish-edit-btn",
           style="display: none") }}
 
-          <div class="dropdown">
+          <button
+            type="button"
+            id="cancel-edit-btn"
+            class="btn btn-danger me-3"
+            style="display: none"
+          >
+            Cancel Edit
+          </button>
+
+          <div class="dropdown" id="file-dropdown">
             <a
               class="btn btn-primary dropdown-toggle me-3"
               href="#"
@@ -209,6 +218,8 @@ content %}
 <script>
   const editBtn = document.getElementById("edit-btn");
   const finishEditBtn = document.getElementById("finish-edit-btn");
+  const cancelEditBtn = document.getElementById("cancel-edit-btn");
+  const fileDropdown = document.getElementById("file-dropdown");
   const form = document.getElementById("job-view-form");
 
   function setFormDisabled(disabled) {
@@ -223,17 +234,14 @@ content %}
   editBtn.addEventListener("click", function () {
     setFormDisabled(false);
     editBtn.style.display = "none";
+    fileDropdown.style.display = "none";
     finishEditBtn.style.display = "inline-block";
+    cancelEditBtn.style.display = "inline-block";
   });
 
-  /*
-  finishEditBtn.addEventListener("click", function () {
-    setFormDisabled(true);
-    finishEditBtn.style.display = "none";
-    editBtn.style.display = "inline-block";
-    // Optionally, submit the form here via AJAX or regular POST
+  cancelEditBtn.addEventListener("click", function () {
+    location.reload(true);
   });
-  */
 </script>
 
 {% endblock %}
