@@ -119,7 +119,7 @@ def delete_file():
         except Exception as e:
             print(f"Error creating job via API: {e}")
             db.session.rollback()
-            return jsonify({'error': 'Error creating job'}), 500
+            return jsonify({'error': 'Error updating job'}), 500
     else:
         flash('Invalid request format. Please use JSON.', 'danger')
         return redirect(request.referrer or url_for('main.index'))

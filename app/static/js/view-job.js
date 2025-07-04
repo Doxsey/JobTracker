@@ -1,7 +1,6 @@
 class JobView {
   constructor(jobViewData) {
     this.jobViewData = jobViewData;
-
     this.init();
   }
 
@@ -17,48 +16,34 @@ class JobView {
   }
 
   setupEventListeners() {
+    // Use event delegation for file-related buttons that get dynamically updated
+    document.addEventListener("click", this.handleDynamicClicks.bind(this));
+
+    // Static elements that don't change
     this.editBtn.addEventListener("click", this.onEdit.bind(this));
     this.cancelEditBtn.addEventListener("click", this.onCancelEdit.bind(this));
     this.confirmDeleteBtn.addEventListener(
       "click",
       this.onConfirmDelete.bind(this)
     );
+  }
 
-    if (this.deleteResumeBtn) {
-      this.deleteResumeBtn.addEventListener(
-        "click",
-        this.onDeleteResume.bind(this)
-      );
+  handleDynamicClicks(event) {
+    // Handle delete buttons
+    if (event.target.id === "delete-resume-btn") {
+      this.onDeleteResume();
+    } else if (event.target.id === "delete-cover_letter-btn") {
+      this.onDeleteCoverLetter();
+    } else if (event.target.id === "delete-job_description-btn") {
+      this.onDeleteJobDescription();
     }
-    if (this.deleteCoverLetterBtn) {
-      this.deleteCoverLetterBtn.addEventListener(
-        "click",
-        this.onDeleteCoverLetter.bind(this)
-      );
-    }
-    if (this.deleteJobDescriptionBtn) {
-      this.deleteJobDescriptionBtn.addEventListener(
-        "click",
-        this.onDeleteJobDescription.bind(this)
-      );
-    }
-    if (this.replaceCoverLetterBtn) {
-      this.replaceCoverLetterBtn.addEventListener(
-        "click",
-        this.onReplaceCoverLetter.bind(this)
-      );
-    }
-    if (this.replaceJobDescriptionBtn) {
-      this.replaceJobDescriptionBtn.addEventListener(
-        "click",
-        this.onReplaceJobDescription.bind(this)
-      );
-    }
-    if (this.replaceResumeBtn) {
-      this.replaceResumeBtn.addEventListener(
-        "click",
-        this.onReplaceResume.bind(this)
-      );
+    // Handle replace buttons
+    else if (event.target.id === "replace-resume-btn") {
+      this.onReplaceResume();
+    } else if (event.target.id === "replace-cover_letter-btn") {
+      this.onReplaceCoverLetter();
+    } else if (event.target.id === "replace-job_description-btn") {
+      this.onReplaceJobDescription();
     }
   }
 
@@ -71,23 +56,6 @@ class JobView {
     this.pageHeading = document.getElementById("page-heading");
     this.confirmDeleteModal = document.getElementById("deleteModal");
     this.confirmDeleteBtn = document.getElementById("confirm-delete-btn");
-
-    this.deleteResumeBtn = document.getElementById("delete-resume-btn");
-    this.deleteCoverLetterBtn = document.getElementById(
-      "delete-cover_letter-btn"
-    );
-    this.deleteJobDescriptionBtn = document.getElementById(
-      "delete-job_description-btn"
-    );
-
-    this.replaceCoverLetterBtn = document.getElementById(
-      "replace-cover_letter-btn"
-    );
-    this.replaceJobDescriptionBtn = document.getElementById(
-      "replace-job_description-btn"
-    );
-    this.replaceResumeBtn = document.getElementById("replace-resume-btn");
-
     this.form = document.getElementById("job-view-form");
   }
 
@@ -194,9 +162,7 @@ class JobView {
               const container = document.getElementById("edit-files-container");
               container.innerHTML = html;
 
-              // Re-cache DOM elements and setup event listeners for new buttons
-              this.cacheDomElements();
-              this.setupEventListeners();
+              // No need to re-setup event listeners - event delegation handles it!
             });
         } else {
           this.showFileAlert("Error deleting file:", data.error);
