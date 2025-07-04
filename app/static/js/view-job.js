@@ -120,27 +120,15 @@ class JobView {
   }
 
   onDeleteResume() {
-    this.deleteFile(
-      this.jobViewData.job_id,
-      this.jobViewData.resume_file,
-      "resume"
-    );
+    this.onDeleteFile(this.jobViewData.resume_file, "resume");
   }
 
   onDeleteCoverLetter() {
-    this.deleteFile(
-      this.jobViewData.job_id,
-      this.jobViewData.cover_letter_file,
-      "cover letter"
-    );
+    this.onDeleteFile(this.jobViewData.cover_letter_file, "cover letter");
   }
 
   onDeleteJobDescription() {
-    this.deleteFile(
-      this.jobViewData.job_id,
-      this.jobViewData.job_description_file,
-      "job description"
-    );
+    this.onDeleteFile(this.jobViewData.job_description_file, "job description");
   }
 
   onReplaceResume() {
@@ -160,30 +148,38 @@ class JobView {
 
   onConfirmDelete() {
     console.log("Confirm Delete Button clicked");
-    // const jobId = this.jobViewData.job_id;
-    // const fileName = this.jobViewData.file_name; // Assuming you have the file name in jobViewData
-    // const fileDescription = this.jobViewData.file_description; // Assuming you have the file description in jobViewData
-
-    // this.deleteFile(jobId, fileName, fileDescription);
+    this.confirmDeleteModal.hide();
+    this.deleteFile();
   }
 
-  deleteFile(job_id, file_name, file_description) {
-    // this.confirmDeleteModal.classList.add("active");
-    var modal = new bootstrap.Modal(
+  onDeleteFile(file_name, file_description) {
+    console.log("onDeleteFile called with:", file_name, file_description);
+    this.file_name = file_name;
+    this.file_description = file_description;
+    this.confirmDeleteModal = new bootstrap.Modal(
       document.getElementById("confirmDeleteModal")
     );
-    modal.show();
+    this.confirmDeleteModal.show();
+  }
 
-    return;
-
+  deleteFile() {
+    console.log(
+      "deleteFile called with:",
+      this.file_name,
+      this.file_description
+    );
+    if (!this.file_name || !this.file_description) {
+      console.error("File name or description is missing.");
+      return;
+    }
     fetch(this.jobViewData.delete_file_url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        job_id: job_id,
-        file_name: file_name,
+        job_id: this.jobViewData.job_id,
+        file_name: this.file_name,
       }),
     })
       .then((response) => response.json())
@@ -203,12 +199,25 @@ class JobView {
               this.setupEventListeners();
             });
         } else {
-          console.error("Error deleting file:", data.error);
+          this.showFileAlert("Error deleting file:", data.error);
         }
       })
       .catch((error) => {
-        console.error(`Error deleting ${file_description}:`, error);
+        console.error(`Error deleting ${this.file_description}:`, error);
       });
     console.log("Delete Resume Button clicked");
+  }
+
+  showFileAlert(boldText, message) {
+    const alertDiv = document.createElement("div");
+    alertDiv.className = "alert alert-danger alert-dismissible fade show";
+    alertDiv.role = "alert";
+    alertDiv.innerHTML = `
+      <strong>${boldText}</strong> ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      `;
+    const container =
+      document.getElementById("file-alert-container") || document.body;
+    container.prepend(alertDiv);
   }
 }
