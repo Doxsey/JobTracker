@@ -1,12 +1,14 @@
+from datetime import date
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from app import db
 from flask_wtf import FlaskForm
-from wtforms import StringField, BooleanField, SubmitField, TextAreaField, DecimalField
+from wtforms import DateField, StringField, BooleanField, SubmitField, TextAreaField, DecimalField
 from flask_wtf.file import FileField, FileRequired, FileAllowed
 from wtforms.validators import DataRequired
 from werkzeug.utils import secure_filename
 from app.models import Job
 import os, uuid, json
+import requests
 
 jobs_bp = Blueprint('jobs', __name__)
 
@@ -58,6 +60,11 @@ class ViewJobForm(FlaskForm):
 
 class DeleteJobForm(FlaskForm):
     submit = SubmitField('Delete')
+
+class CloseJobForm(FlaskForm):
+    closing_reason = StringField('Closing Reason')
+    closing_date = DateField("Date Closed", format='%Y-%m-%d', default=date.today, validators=[DataRequired()])
+    submit = SubmitField('Close Job')
 
 @jobs_bp.route('/create', methods=['GET', 'POST'])
 def create():
@@ -190,14 +197,14 @@ def create():
                 company_website = form.company_website.data
                 title = form.title.data
                 description = form.description.data
-                location = request.form['location']
-                salary_range_low = request.form['salary_range_low']
-                salary_range_high = request.form['salary_range_high']
-                remote_option = request.form['remote_option']
-                posting_url = request.form['posting_url']
-                posting_id = request.form['posting_id']
-                referrer = request.form['referrer']
-                referrer_posting_id = request.form['referrer_posting_id']
+                location = form.location.data
+                salary_range_low = form.salary_range_low.data
+                salary_range_high = form.salary_range_high.data
+                remote_option = form.remote_option.data
+                posting_url = form.posting_url.data
+                posting_id = form.posting_id.data
+                referrer = form.referrer.data
+                referrer_posting_id = form.referrer_posting_id.data
                 resume_file = form.resume_file.data
                 job_description_file = form.job_description_file.data
                 cover_letter_file = form.cover_letter_file.data
@@ -321,6 +328,54 @@ def view(job_id):
                 flash('Error updating job!', 'error')
 
     return render_template('jobs/view.html', job=job, form=form)
+
+@jobs_bp.route('/<int:job_id>/close', methods=['GET', 'POST'])
+def close(job_id):
+    form = CloseJobForm()
+    job = Job.query.get_or_404(job_id)
+
+    if request.method == 'GET':
+        form.process()  # Apply default values
+        return render_template('jobs/close.html', job=job, form=form)
+
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            closing_reason = {
+                "reason": form.closing_reason.data
+            }
+
+            closing_reason_json = json.dumps(closing_reason)
+
+            activity_data = {
+                "job_id": job.id,
+                "activity_type": "Job Posting Closed",
+                "activity_date": f"{form.closing_date.data}",
+                "activity_json_data": closing_reason_json
+            }
+
+            # print(f"Activity data: {activity_data}")
+
+            # Construct the full API URL (adjust as needed for your app's routing)
+            api_url = url_for('job_activities.add', _external=True)
+
+            try:
+                response = requests.post(api_url, json=activity_data)
+                if response.status_code != 201:
+                    flash('Failed to log job closing activity.', 'warning')
+                    print(f"Error logging job closing activity: {response.text}")
+                    return render_template('jobs/close.html', job=job, form=form)
+            except Exception as e:
+                flash('Error logging job closing activity.', 'warning')
+                print(f"Error sending POST to job_activities/api/create: {e}")
+                return render_template('jobs/close.html', job=job, form=form)
+
+            job.posting_status = 'Closed'
+            
+            db.session.commit()
+            flash('Job closed successfully!', 'success')
+            return redirect('/')
+
+    return render_template('jobs/close.html', job=job, form=form)
 
 @jobs_bp.route('/<int:job_id>/delete', methods=['GET', 'POST'])
 def delete(job_id):

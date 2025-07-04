@@ -143,6 +143,9 @@ has_notes = job.notes|length > 0 %}
       <a class="dropdown-item" data-href="{{ url_for('jobs.view', job_id=job.id) }}">View Job</a>
     </li>
     <li>
+      <a class="dropdown-item" data-href="{{ url_for('jobs.close', job_id=job.id) }}">Close Job</a>
+    </li>
+    <li>
       <a class="dropdown-item" data-href="{{ url_for('jobs.delete', job_id=job.id) }}">Delete Job</a>
     </li>
   </ul>

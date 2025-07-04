@@ -1,9 +1,9 @@
-{% extends "base.html" %} {% block title %}Delete Job{% endblock %} {% block content %}
+{% extends "base.html" %} {% block title %}Close Job{% endblock %} {% block content %}
 
 <div class="container">
-  <h5>Delete Job</h5>
+  <h5>Close Job Posting</h5>
 
-  <div class="card" style="width: auto; display: inline-block">
+  <div class="card d-inline-block" style="min-width: 50%; width: auto">
     <div class="card-body">
       <ul class="list-group list-group-flush">
         <li class="list-group-item">
@@ -29,12 +29,15 @@
           {{ job.description }}
         </li>
       </ul>
-      <br />
-      <p><strong>Are you sure you want to delete this job?</strong></p>
-      <p>All data, including files, will be permanently deleted.</p>
+      <div class="border-top my-3"></div>
 
+      <p><strong>Are you sure you want to close this job?</strong></p>
       <form method="POST">
-        {{ form.hidden_tag() }} {{ form.submit(class="btn btn-danger") }} {# #}
+        {{ form.closing_date.label(class="form-label") }} {{ form.closing_date(class="form-control") }}
+        <br />
+        {{ form.closing_reason(size=32, class="form-control", placeholder="Closing Reason") }}
+        <br />
+        {{ form.hidden_tag() }} {{ form.submit(class="btn btn-primary me-3") }}
         <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Cancel</a>
       </form>
     </div>
