@@ -15,7 +15,9 @@
 </div>
 
 {% endmacro %} {% macro job_row_with_additional_info(job) %} {% set has_activities = job.activities|length > 0 %} {% set
-has_notes = job.notes|length > 0 %}
+has_notes = job.notes|length > 0 %} {% set has_files = job.resume_file or job.job_description_file or
+job.cover_letter_file %}
+
 <tr class="clickable-row" data-bs-target="#details-{{ job.id }}" aria-expanded="false">
   <td><i class="expand-icon">▼</i></td>
   <td>{{ job.company }}</td>
@@ -33,7 +35,7 @@ has_notes = job.notes|length > 0 %}
       <div class="mb-3">
         {% if has_activities %}
         <button
-          class="btn btn-outline-secondary sub-detail-btn me-2"
+          class="btn btn-sm btn-outline-secondary sub-detail-btn me-2"
           data-bs-toggle="collapse"
           data-bs-target="#activities-{{ job.id }}"
           aria-expanded="false"
@@ -44,7 +46,7 @@ has_notes = job.notes|length > 0 %}
 
         {% endif %} {% if has_notes %}
         <button
-          class="btn btn-outline-secondary sub-detail-btn me-2"
+          class="btn btn-sm btn-outline-secondary sub-detail-btn me-2"
           data-bs-toggle="collapse"
           data-bs-target="#notes-{{ job.id }}"
           aria-expanded="false"
@@ -53,6 +55,16 @@ has_notes = job.notes|length > 0 %}
           Notes
         </button>
 
+        {% endif %} {% if has_files %}
+        <button
+          class="btn btn-sm btn-outline-secondary sub-detail-btn me-2"
+          data-bs-toggle="collapse"
+          data-bs-target="#files-{{ job.id }}"
+          aria-expanded="false"
+        >
+          <i class="nested-expand-icon">▼</i>
+          Files
+        </button>
         {% endif %}
       </div>
 
@@ -110,6 +122,30 @@ has_notes = job.notes|length > 0 %}
         </div>
       </div>
 
+      {% endif %} {% if has_files %}
+      <div class="collapse mb-3" id="files-{{ job.id }}">
+        <div class="card card-body sub-detail-row">
+          <h5>Files</h5>
+
+          <ul class="list-group">
+            {% if job.resume_file %}
+            <li class="list-group-item">
+              <a href="{{ url_for('files.download_file', job_id=job.id, file_type='resume') }}">Resume</a>
+            </li>
+            {% endif %} {% if job.cover_letter_file %}
+            <li class="list-group-item">
+              <a href="{{ url_for('files.download_file', job_id=job.id, file_type='cover_letter') }}">Cover Letter</a>
+            </li>
+            {% endif %} {% if job.job_description_file %}
+            <li class="list-group-item">
+              <a href="{{ url_for('files.download_file', job_id=job.id, file_type='job_description') }}">
+                Job Description
+              </a>
+            </li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
       {% endif %}
     </div>
   </td>
