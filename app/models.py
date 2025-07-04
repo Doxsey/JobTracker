@@ -27,8 +27,8 @@ class Job(db.Model):
     cover_letter_file = db.Column(db.String(50), nullable=True)
     posting_status = db.Column(db.String(50), default='Open')
     posting_url = db.Column(db.String(200), nullable=True)
-    notes = db.relationship('JobNotes', backref='Job')
-    activities = db.relationship('JobActivities', backref='Job')
+    notes = db.relationship('JobNotes', backref='Job', cascade='all, delete-orphan')
+    activities = db.relationship('JobActivities', backref='Job', cascade='all, delete-orphan')
 
     def __repr__(self):
         return f'<Job {self.title}>'

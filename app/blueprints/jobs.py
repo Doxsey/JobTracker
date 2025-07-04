@@ -54,11 +54,10 @@ class ViewJobForm(FlaskForm):
     posting_url = StringField('Posting URL')
     company_website = StringField('Company Website')
     created_dt = StringField('Date Created')
-    # job_description_file = StringField('Job Description File')
-    # resume_file = StringField('Resume File')
-    # cover_letter_file = StringField('Cover Letter File')
-    # posting_status = StringField('Posting Status')
     submit = SubmitField('Save Changes')
+
+class DeleteJobForm(FlaskForm):
+    submit = SubmitField('Delete')
 
 @jobs_bp.route('/create', methods=['GET', 'POST'])
 def create():
@@ -322,6 +321,46 @@ def view(job_id):
                 flash('Error updating job!', 'error')
 
     return render_template('jobs/view.html', job=job, form=form)
+
+@jobs_bp.route('/<int:job_id>/delete', methods=['GET', 'POST'])
+def delete(job_id):
+    form = DeleteJobForm()
+    job = Job.query.get_or_404(job_id)
+    if request.method == 'GET':
+        print("GET request for job delete")
+        return render_template('jobs/delete.html', job=job, form=form)
+
+    if request.method == 'POST':
+        print("POST request for job delete")
+        if form.validate_on_submit():
+            
+            if job.resume_file:
+                delete_file(job.resume_file, "Resumes")
+            if job.job_description_file:
+                delete_file(job.job_description_file, "Job_Descriptions")
+            if job.cover_letter_file:
+                delete_file(job.cover_letter_file, "Cover_Letters")
+
+            db.session.delete(job)
+            db.session.commit()
+            flash('Job deleted successfully!', 'success')
+        else:
+            print("Form validation failed. Errors:", form.errors)
+            flash('Error deleting job!', 'error')
+        return redirect('/')
+
+    return render_template('jobs/delete.html', job=job, form=form)
+
+def delete_file(file_name, folder):
+    file_folder = os.path.join(current_app.config['FILE_STORAGE_PATH'], folder)
+    file_path = os.path.join(file_folder, file_name)
+
+    if os.path.exists(file_path):
+        try:
+            os.remove(file_path)
+            print(f"File {file_name} deleted successfully from {folder} folder.")
+        except Exception as e:
+            print(f"Error deleting file {file_name} from {folder} folder: {str(e)}")
 
 @jobs_bp.route('/<int:job_id>/file-cards', methods=['GET', 'POST'])
 def file_cards(job_id):
