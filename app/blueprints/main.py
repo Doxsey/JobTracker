@@ -5,9 +5,12 @@ main_bp = Blueprint('main', __name__)
 
 @main_bp.route('/')
 def index():
+    title = "Open Job Applications"
     jobs = Job.query.filter_by(posting_status="Open").all()
-    return render_template('index.html', jobs=jobs)
+    return render_template('index.html', jobs=jobs, title=title)
 
-@main_bp.route('/about')
-def about():
-    return render_template('about.html')
+@main_bp.route('/all')
+def all_jobs():
+    title = "All Job Applications"
+    jobs = Job.query.all()
+    return render_template('index.html', jobs=jobs, title=title)

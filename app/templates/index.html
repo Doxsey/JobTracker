@@ -1,11 +1,9 @@
-{% from "jobs_macros.html" import job_row_with_activities,
-job_row_without_activities, job_row_with_additional_info %} {% extends
-"base.html" %} {% block title %}Home - Job Tracker{% endblock %} {% block
-content %}
+{% from "jobs_macros.html" import job_row_with_activities, job_row_without_activities, job_row_with_additional_info %}
+{% extends "base.html" %} {% block title %}Home - Job Tracker{% endblock %} {% block content %}
 
 <div class="row">
   <div class="col-md-12">
-    <p class="lead">List of Open Job Postings</p>
+    <p class="lead">{{ title }}</p>
 
     <table class="table table-hover">
       <thead>
@@ -22,17 +20,14 @@ content %}
       </thead>
 
       <tbody>
-        {% for job in jobs %} {% set has_activities = job.activities|length > 0
-        %} {% set has_notes = job.notes|length > 0 %} {% if has_activities or
-        has_notes %} {{ job_row_with_additional_info(job) }} {% else %} {{
+        {% for job in jobs %} {% set has_activities = job.activities|length > 0 %} {% set has_notes = job.notes|length >
+        0 %} {% if has_activities or has_notes %} {{ job_row_with_additional_info(job) }} {% else %} {{
         job_row_without_activities(job) }} {% endif %} {% endfor %}
       </tbody>
     </table>
 
     <div class="mt-4">
-      <a href="{{ url_for('jobs.create') }}" class="btn btn-success"
-        >Add Job Application</a
-      >
+      <a href="{{ url_for('jobs.create') }}" class="btn btn-success">Add Job Application</a>
     </div>
   </div>
 </div>
@@ -67,9 +62,7 @@ content %}
     });
 
     // Handle main row collapse icons
-    const collapsibleRows = document.querySelectorAll(
-      '[data-bs-toggle="collapse"]:not(.sub-detail-btn)'
-    );
+    const collapsibleRows = document.querySelectorAll('[data-bs-toggle="collapse"]:not(.sub-detail-btn)');
     collapsibleRows.forEach(function (row) {
       const targetId = row.getAttribute("data-bs-target");
       const target = document.querySelector(targetId);
