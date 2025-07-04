@@ -5,7 +5,6 @@ class JobView {
   }
 
   init() {
-    console.log("Initializing JobView with job:", this.jobViewData);
     document.addEventListener(
       "DOMContentLoaded",
       function () {
@@ -45,6 +44,14 @@ class JobView {
     } else if (event.target.id === "replace-job_description-btn") {
       this.onReplaceJobDescription();
     }
+    // Handle upload buttons
+    else if (event.target.id === "upload-resume-btn") {
+      this.onUploadResume();
+    } else if (event.target.id === "upload-cover_letter-btn") {
+      this.onUploadCoverLetter();
+    } else if (event.target.id === "upload-job_description-btn") {
+      this.onUploadJobDescription();
+    }
   }
 
   cacheDomElements() {
@@ -57,6 +64,11 @@ class JobView {
     this.confirmDeleteModal = document.getElementById("deleteModal");
     this.confirmDeleteBtn = document.getElementById("confirm-delete-btn");
     this.form = document.getElementById("job-view-form");
+  }
+
+  updateJobData(updates) {
+    Object.assign(this.jobViewData, updates);
+    // console.log("Updated job data:", this.jobViewData);
   }
 
   setFormDisabled(disabled) {
@@ -81,10 +93,12 @@ class JobView {
     }
     this.pageHeading.textContent = "Editing Job";
     this.pageHeading.classList.add("text-warning");
+    this.refreshFileCards();
   }
 
   onCancelEdit() {
-    location.reload(true);
+    // location.reload(true);
+    location.replace(window.location.href);
   }
 
   onDeleteResume() {
@@ -99,29 +113,37 @@ class JobView {
     this.onDeleteFile(this.jobViewData.job_description_file, "job description");
   }
 
+  onUploadResume() {
+    this.uploadFile("resume_file");
+  }
+
+  onUploadCoverLetter() {
+    this.uploadFile("cover_letter_file");
+  }
+
+  onUploadJobDescription() {
+    this.uploadFile("job_description_file");
+  }
+
+  // Updated replace button handlers (same functionality, but with replace flag)
   onReplaceResume() {
-    // Add your replace logic here
-    console.log("Replace Resume Button clicked");
+    this.uploadFile("resume_file", true);
   }
 
   onReplaceCoverLetter() {
-    // Add your replace logic here
-    console.log("Replace Cover Letter Button clicked");
+    this.uploadFile("cover_letter_file", true);
   }
 
   onReplaceJobDescription() {
-    // Add your replace logic here
-    console.log("Replace Job Description Button clicked");
+    this.uploadFile("job_description_file", true);
   }
 
   onConfirmDelete() {
-    console.log("Confirm Delete Button clicked");
     this.confirmDeleteModal.hide();
     this.deleteFile();
   }
 
   onDeleteFile(file_name, file_description) {
-    console.log("onDeleteFile called with:", file_name, file_description);
     this.file_name = file_name;
     this.file_description = file_description;
     this.confirmDeleteModal = new bootstrap.Modal(
@@ -131,11 +153,11 @@ class JobView {
   }
 
   deleteFile() {
-    console.log(
-      "deleteFile called with:",
-      this.file_name,
-      this.file_description
-    );
+    // console.log(
+    //   "deleteFile called with:",
+    //   this.file_name,
+    //   this.file_description
+    // );
     if (!this.file_name || !this.file_description) {
       console.error("File name or description is missing.");
       return;
@@ -152,18 +174,22 @@ class JobView {
     })
       .then((response) => response.json())
       .then((data) => {
-        console.log("Response from deleteFile:", data);
+        // console.log("Response from deleteFile:", data);
         if (data.success) {
-          console.log("Inside of deleteFile() success block");
-          // Fetch updated file cards
-          fetch(`/jobs/${this.jobViewData.job_id}/file-cards`)
-            .then((response) => response.text())
-            .then((html) => {
-              const container = document.getElementById("edit-files-container");
-              container.innerHTML = html;
+          const fileTypeMap = {
+            [this.jobViewData.resume_file]: "resume_file",
+            [this.jobViewData.cover_letter_file]: "cover_letter_file",
+            [this.jobViewData.job_description_file]: "job_description_file",
+          };
 
-              // No need to re-setup event listeners - event delegation handles it!
+          const deletedFileType = fileTypeMap[this.file_name];
+          if (deletedFileType) {
+            this.updateJobData({
+              [deletedFileType]: null,
             });
+          }
+
+          this.refreshFileCards();
         } else {
           this.showFileAlert("Error deleting file:", data.error);
         }
@@ -171,19 +197,132 @@ class JobView {
       .catch((error) => {
         console.error(`Error deleting ${this.file_description}:`, error);
       });
-    console.log("Delete Resume Button clicked");
   }
 
-  showFileAlert(boldText, message) {
+  uploadFile(fileType, replaceExisting = false) {
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = ".pdf,.doc,.docx,.txt,.tex,";
+    fileInput.style.display = "none";
+    document.body.appendChild(fileInput);
+
+    fileInput.addEventListener("change", async (event) => {
+      const file = event.target.files[0];
+      if (!file) {
+        document.body.removeChild(fileInput);
+        return;
+      }
+
+      // Show loading state (optional)
+      this.showLoadingState(fileType, true);
+
+      try {
+        const result = await this.performFileUpload(
+          file,
+          fileType,
+          replaceExisting
+        );
+
+        if (result.success) {
+          // Refresh file cards to show the new file
+          this.refreshFileCards();
+          this.showFileAlert(
+            "Success!",
+            `${fileType.replace("_", " ")} uploaded successfully.`,
+            "success"
+          );
+        } else {
+          this.showFileAlert("Error uploading file:", result.error);
+        }
+      } catch (error) {
+        this.showFileAlert("Error uploading file:", error.message);
+      } finally {
+        this.showLoadingState(fileType, false);
+        document.body.removeChild(fileInput);
+      }
+    });
+
+    // Trigger the file picker
+    fileInput.click();
+  }
+
+  async performFileUpload(file, fileType, replaceExisting = false) {
+    const formData = new FormData();
+    formData.append("job_id", this.jobViewData.job_id);
+    formData.append("file_type", fileType);
+    formData.append("file", file);
+    formData.append("replace_existing", replaceExisting.toString());
+
+    const response = await fetch("/files/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || "Upload failed");
+    }
+
+    this.updateJobData({
+      [fileType]: result.stored_filename,
+    });
+
+    return result;
+  }
+
+  refreshFileCards() {
+    fetch(`/jobs/${this.jobViewData.job_id}/file-cards`)
+      .then((response) => response.text())
+      .then((html) => {
+        const container = document.getElementById("edit-files-container");
+        container.innerHTML = html;
+
+        // No need to re-setup event listeners - event delegation handles it!
+      });
+  }
+
+  // Show loading state
+  showLoadingState(fileType, isLoading) {
+    const buttonId = isLoading
+      ? `upload-${fileType.replace("_file", "")}-btn`
+      : `replace-${fileType.replace("_file", "")}-btn`;
+
+    const button = document.getElementById(buttonId);
+    if (button) {
+      if (isLoading) {
+        button.disabled = true;
+        button.textContent = "Uploading...";
+      } else {
+        button.disabled = false;
+        // Reset button text based on whether file exists
+        const hasFile = this.jobViewData[fileType];
+        button.textContent = hasFile ? "Replace" : "Upload";
+      }
+    }
+  }
+
+  // Updated showFileAlert to support success messages
+  showFileAlert(boldText, message, type = "danger") {
     const alertDiv = document.createElement("div");
-    alertDiv.className = "alert alert-danger alert-dismissible fade show";
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
     alertDiv.role = "alert";
     alertDiv.innerHTML = `
-      <strong>${boldText}</strong> ${message}
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-      `;
+    <strong>${boldText}</strong> ${message}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  `;
+
     const container =
       document.getElementById("file-alert-container") || document.body;
     container.prepend(alertDiv);
+
+    // Auto-dismiss success alerts after 3 seconds
+    if (type === "success") {
+      setTimeout(() => {
+        if (alertDiv.parentNode) {
+          alertDiv.remove();
+        }
+      }, 5000);
+    }
   }
 }
