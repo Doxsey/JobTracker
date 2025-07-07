@@ -67,18 +67,17 @@ job.cover_letter_file %}
         </button>
         {% endif %}
       </div>
-
-      {% if has_activities %}
+      {# TODO: Add formatting for different activities #} {% if has_activities %}
       <div class="collapse mb-3" id="activities-{{ job.id }}">
         <div class="card card-body sub-detail-row">
           <h5>Job Activity History</h5>
           <div class="table-responsive">
-            <table class="table table-sm">
+            <table class="table table-sm table-hover">
               <thead>
                 <tr>
                   <th>Type</th>
                   <th>Date</th>
-                  <th>Data</th>
+                  <th>Brief</th>
                 </tr>
               </thead>
               <tbody>
@@ -86,9 +85,7 @@ job.cover_letter_file %}
                 <tr>
                   <td>{{ job_activity.activity_type }}</td>
                   <td>{{ job_activity.activity_date.strftime('%Y-%m-%d') }}</td>
-                  <td>
-                    <pre><code class="json">{{ job_activity.activity_json_data | e }}</code></pre>
-                  </td>
+                  <td>{{ job_activity.activity_brief }}</td>
                 </tr>
                 {% endfor %}
               </tbody>

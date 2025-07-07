@@ -350,10 +350,9 @@ def close(job_id):
                 "job_id": job.id,
                 "activity_type": "Job Posting Closed",
                 "activity_date": f"{form.closing_date.data}",
+                "activity_brief": f"Job closed: {form.closing_reason.data}",
                 "activity_json_data": closing_reason_json
             }
-
-            # print(f"Activity data: {activity_data}")
 
             # Construct the full API URL (adjust as needed for your app's routing)
             api_url = url_for('job_activities.add', _external=True)

@@ -21,7 +21,8 @@
 
       <tbody>
         {% for job in jobs %} {% set has_activities = job.activities|length > 0 %} {% set has_notes = job.notes|length >
-        0 %} {% if has_activities or has_notes %} {{ job_row_with_additional_info(job) }} {% else %} {{
+        0 %} {% set has_files = job.resume_file or job.job_description_file or job.cover_letter_file %} {% if
+        has_activities or has_notes or has_files%} {{ job_row_with_additional_info(job) }} {% else %} {{
         job_row_without_activities(job) }} {% endif %} {% endfor %}
       </tbody>
     </table>

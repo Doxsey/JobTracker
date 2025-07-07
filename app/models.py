@@ -81,6 +81,7 @@ class JobActivities(db.Model):
     job_id = db.Column(db.Integer, db.ForeignKey('jobs.id'), nullable=False)
     activity_date = db.Column(db.DateTime, default=lambda: datetime.now(pytz.timezone(current_app.config['LOCAL_TIMEZONE'])))
     activity_type = db.Column(db.String(50), nullable=False)
+    activity_brief = db.Column(db.String(100), nullable=True)  # New field for brief description
     activity_json_data = db.Column(JSON, nullable=False)
 
     def __repr__(self):
@@ -92,6 +93,7 @@ class JobActivities(db.Model):
             'job_id': self.job_id,
             'activity_date': self.activity_date,
             'activity_type': self.activity_type,
+            'activity_brief': self.activity_brief,  # Include brief description in the dict
             'activity_json_data': self.activity_json_data
         }
     
