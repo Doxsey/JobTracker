@@ -6,7 +6,7 @@ from wtforms import DateField, StringField, BooleanField, SubmitField, TextAreaF
 from flask_wtf.file import FileField, FileRequired, FileAllowed
 from wtforms.validators import DataRequired
 from werkzeug.utils import secure_filename
-from app.models import Job
+from app.models import Job, Settings
 import os, uuid, json
 import requests
 
@@ -66,10 +66,11 @@ class CloseJobForm(FlaskForm):
 
 @jobs_bp.route('/create', methods=['GET', 'POST'])
 def create():
+    settings = Settings.query.all()
     if request.method == 'GET':
         # Handle GET request - show the form
         form = NewJobForm()
-        return render_template('jobs/create.html', form=form)
+        return render_template('jobs/create.html', form=form, settings=settings)
     
     # Handle POST request
     if request.method == 'POST':
@@ -205,11 +206,40 @@ def create():
                 posting_id = form.posting_id.data
                 referrer = form.referrer.data
                 referrer_posting_id = form.referrer_posting_id.data
+                use_default_resume = form.use_default_resume.data
                 resume_file = form.resume_file.data
                 job_description_file = form.job_description_file.data
                 cover_letter_file = form.cover_letter_file.data
+                
+                if use_default_resume:
+                    print("Using default resume")
+                    resume_file = None
+                    # Get the default resume filename from settings
+                    default_resume_setting = Settings.query.filter_by(key='default_resume').first()
+                    if default_resume_setting:
+                        default_resume_file = default_resume_setting.value
+                        print(f"Using default resume file: {default_resume_file}")
+                        file_path = os.path.join(current_app.config['FILE_STORAGE_PATH'], 'Resumes', default_resume_file)
 
-                if resume_file:
+                        if not os.path.exists(file_path):
+                            flash('Default resume file not found!', 'error')
+                            return render_template('jobs/create.html', form=form)
+
+                        unique_resume_filename = generate_unique_filename(default_resume_file)
+                        new_file_path = os.path.join(current_app.config['FILE_STORAGE_PATH'], 'Resumes', unique_resume_filename)
+                        try:
+                            # Copy the default resume file to a new unique filename
+                            os.makedirs(os.path.dirname(new_file_path), exist_ok=True)
+                            with open(file_path, 'rb') as src_file:
+                                with open(new_file_path, 'wb') as dest_file:
+                                    dest_file.write(src_file.read())
+                        except Exception as e:
+                            flash(f'Error using default resume file: {str(e)}', 'error')
+
+                # else:
+                #     resume_file = form.resume_file.data
+
+                if resume_file and not use_default_resume:
                     original_resume_filename = secure_filename(resume_file.filename)
                     unique_resume_filename = generate_unique_filename(original_resume_filename)
 
@@ -271,7 +301,7 @@ def create():
                     referrer=referrer,
                     referrer_posting_id=referrer_posting_id,
                     posting_url=posting_url,
-                    resume_file=unique_resume_filename if resume_file else None,
+                    resume_file=unique_resume_filename if (resume_file or use_default_resume) else None,
                     job_description_file=unique_job_description_filename if job_description_file else None,
                     cover_letter_file=unique_cover_letter_filename if cover_letter_file else None
                 )

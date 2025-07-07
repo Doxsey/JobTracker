@@ -62,13 +62,27 @@ Tracker{% endblock %} {% block content %}
 
         <br />
         <div class="row">
-          <div class="form-check d-flex justify-content-start">
-            {{ form.use_default_resume(class="form-check-input me-3 ms-3") }} {{
-            form.use_default_resume.label(class="form-check-label") }}
+          <div class="form-check d-flex justify-content-start mb-3">
+            {% for setting in settings %}
+            {% if setting.key == "default_resume" %}
+            {{ form.use_default_resume(class="form-check-input me-3 ms-3", id="use_default_resume_checkbox") }}
+            {{ form.use_default_resume.label(class="form-check-label") }}
+            {% else %}
+            <input class="form-check-input me-3 ms-3" type="checkbox" value="" id="checkIndeterminateDisabled"
+              disabled />
+            <label class="form-check-label" for="checkIndeterminateDisabled">
+              Use Default Resume (Upload a default resume in settings)
+            </label>
+
+            {% endif %}
+            {% endfor %}
           </div>
         </div>
-        {{ select_file_upload(form.resume_file, "Resume") }} {{ select_file_upload(form.cover_letter_file, "Cover
-        Letter") }} {{ select_file_upload(form.job_description_file, "Job Description") }}
+        <div id="resume-file-container">
+          {{ select_file_upload(form.resume_file, "Resume") }}
+        </div>
+        {{ select_file_upload(form.cover_letter_file, "Cover Letter") }}
+        {{ select_file_upload(form.job_description_file, "Job Description") }}
 
         <br />
         <hr />
@@ -111,11 +125,45 @@ Tracker{% endblock %} {% block content %}
 </div>
 
 <script>
-  document.querySelector('input[type="file"]').addEventListener("change", function (e) {
-    const fileName = e.target.files[0]?.name;
-    if (fileName) {
-      console.log("Selected file:", fileName);
-      // You can add more file preview functionality here
+  document.addEventListener('DOMContentLoaded', function () {
+    const useDefaultResumeCheckbox = document.getElementById('use_default_resume_checkbox');
+    const resumeFileContainer = document.getElementById('resume-file-container');
+
+    function toggleResumeFileInput() {
+      const resumeFileInput = resumeFileContainer.querySelector('input[type="file"]');
+      const resumeFileLabel = resumeFileContainer.querySelector('label');
+      const resumeFileDiv = resumeFileContainer.querySelector('div');
+
+      if (useDefaultResumeCheckbox && useDefaultResumeCheckbox.checked) {
+        // Disable the file input
+        if (resumeFileInput) {
+          resumeFileInput.disabled = true;
+          resumeFileInput.value = ''; // Clear any selected file
+        }
+        // Add visual indication that it's disabled
+        if (resumeFileDiv) {
+          resumeFileDiv.style.opacity = '0.5';
+          resumeFileDiv.style.pointerEvents = 'none';
+        }
+      } else {
+        // Enable the file input
+        if (resumeFileInput) {
+          resumeFileInput.disabled = false;
+        }
+        // Remove visual indication
+        if (resumeFileDiv) {
+          resumeFileDiv.style.opacity = '1';
+          resumeFileDiv.style.pointerEvents = 'auto';
+        }
+      }
+    }
+
+    // Initial state check
+    toggleResumeFileInput();
+
+    // Listen for checkbox changes
+    if (useDefaultResumeCheckbox) {
+      useDefaultResumeCheckbox.addEventListener('change', toggleResumeFileInput);
     }
   });
 </script>
