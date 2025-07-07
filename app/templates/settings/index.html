@@ -1,0 +1,40 @@
+{% from "jobs_macros.html" import select_file_upload %} {% extends "base.html" %} {% block title %}Settings{% endblock
+%} {% block content %}
+
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <p class="lead">Settings</p>
+      <div class="row">
+        <div class="card m-3" style="min-width: 50%; width: auto">
+          <div class="card-body">
+            <h5 class="card-title">Default Resume File</h5>
+            <hr />
+            <div class="col">
+              <div class="row-md-6">
+                {% for current_setting in current_settings%} {% if current_setting.key == "default_resume" %}
+                <!-- prettier-ignore -->
+                <strong class="me-2">Default resume has been set:</strong>
+                <button type="button" class="btn btn-primary btn-sm" id="download-resume-btn">Download</button>
+                <button type="button" class="btn btn-danger btn-sm" id="delete-resume-btn">Delete</button>
+
+                {% else %}
+                <strong>No default resume file set</strong>
+                {% endif %} {% endfor %}
+              </div>
+              <br />
+
+              <div class="row-md-6">
+                <strong class="me-2">Upload new default resume:</strong>
+                <button type="button" class="btn btn-secondary btn-sm" id="upload-new-btn">Upload</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/settings/settings.js') }}"></script>
+{% endblock %}

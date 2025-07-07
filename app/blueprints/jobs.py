@@ -26,20 +26,18 @@ class NewJobForm(FlaskForm):
     posting_url = StringField('Posting URL')
     company_website = StringField('Company Website')
     resume_file = FileField('Resume File', validators=[
-        FileRequired(),
         FileAllowed(['pdf', 'docx', 'doc', 'tex'], 
                    'Only PDF and document files allowed!')
     ])
     job_description_file = FileField('Job Description File', validators=[
-        FileRequired(),
         FileAllowed(['pdf', 'docx', 'doc', 'tex'], 
                    'Only PDF and document files allowed!')
     ])
     cover_letter_file = FileField('Cover Letter File', validators=[
-        FileRequired(),
         FileAllowed(['pdf', 'docx', 'doc', 'tex'], 
                    'Only PDF and document files allowed!')
     ])
+    use_default_resume = BooleanField('Use Default Resume', default=True)
     submit = SubmitField('Add Job')
 
 class ViewJobForm(FlaskForm):
@@ -189,7 +187,9 @@ def create():
                 return jsonify({'error': 'Error creating job'}), 500
         
         else:
+            print("Handling form submission")
             # Handle form submission (existing logic)
+
             form = NewJobForm()
             if form.validate_on_submit():
                 print("Form submitted successfully")

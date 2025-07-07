@@ -1,5 +1,5 @@
-{% from "jobs_macros.html" import select_file_upload %} {% extends "base.html"
-%} {% block title %}Create Job - Job Tracker{% endblock %} {% block content %}
+{% from "jobs_macros.html" import select_file_upload %} {% extends "base.html" %} {% block title %}Create Job - Job
+Tracker{% endblock %} {% block content %}
 <div class="row justify-content-center">
   <div class="col-md-8">
     <h3>Add New Job</h3>
@@ -10,8 +10,7 @@
       <div class="container text-center">
         <div class="row">
           <div class="col">
-            {{ form.company(size=32, class="form-control",
-            placeholder="Company") }}
+            {{ form.company(size=32, class="form-control", placeholder="Company") }}
             <br />
           </div>
           <div class="col">
@@ -21,18 +20,10 @@
         </div>
 
         <div class="row">
-          <div class="col">
-            {{ form.location(size=32, class="form-control",
-            placeholder="Location") }}
-          </div>
+          <div class="col">{{ form.location(size=32, class="form-control", placeholder="Location") }}</div>
           <div class="col">
             <div class="row">
-              <select
-                class="form-select"
-                name="remote_option"
-                id="remote_option"
-                aria-label="Default select example"
-              >
+              <select class="form-select" name="remote_option" id="remote_option" aria-label="Default select example">
                 <option value="">Select Remote Option</option>
                 <option value="Remote">Remote</option>
                 <option value="Hybrid">Hybrid</option>
@@ -54,31 +45,30 @@
 
         <div class="row">
           <div class="col">
-            {{ form.salary_range_low(size=32, class="form-control",
-            placeholder="Salary Range Low") }}
+            {{ form.salary_range_low(size=32, class="form-control", placeholder="Salary Range Low") }}
             <br />
           </div>
           <div class="col">
-            {{ form.salary_range_high(size=32, class="form-control",
-            placeholder="Salary Range High") }}
+            {{ form.salary_range_high(size=32, class="form-control", placeholder="Salary Range High") }}
           </div>
         </div>
 
         <div class="row">
           <div class="col">
-            {{ form.company_website(size=32, class="form-control",
-            placeholder="Company Website") }}
+            {{ form.company_website(size=32, class="form-control", placeholder="Company Website") }}
           </div>
-          <div class="col">
-            {{ form.posting_id(size=32, class="form-control",
-            placeholder="Posting ID") }}
-          </div>
+          <div class="col">{{ form.posting_id(size=32, class="form-control", placeholder="Posting ID") }}</div>
         </div>
 
         <br />
-        {{ select_file_upload(form.resume_file, "Resume") }} {{
-        select_file_upload(form.cover_letter_file, "Cover Letter") }} {{
-        select_file_upload(form.job_description_file, "Job Description") }}
+        <div class="row">
+          <div class="form-check d-flex justify-content-start">
+            {{ form.use_default_resume(class="form-check-input me-3 ms-3") }} {{
+            form.use_default_resume.label(class="form-check-label") }}
+          </div>
+        </div>
+        {{ select_file_upload(form.resume_file, "Resume") }} {{ select_file_upload(form.cover_letter_file, "Cover
+        Letter") }} {{ select_file_upload(form.job_description_file, "Job Description") }}
 
         <br />
         <hr />
@@ -93,20 +83,17 @@
 
         <div class="row">
           <div class="col">
-            {{ form.referrer(size=32, class="form-control",
-            placeholder="Referrer") }}
+            {{ form.referrer(size=32, class="form-control", placeholder="Referrer") }}
             <br />
           </div>
           <div class="col">
-            {{ form.referrer_posting_id(size=32, class="form-control",
-            placeholder="Referrer Posting ID") }}
+            {{ form.referrer_posting_id(size=32, class="form-control", placeholder="Referrer Posting ID") }}
           </div>
         </div>
 
         <div class="row">
           <div class="col">
-            {{ form.posting_url(size=32, class="form-control",
-            placeholder="Posting URL") }}
+            {{ form.posting_url(size=32, class="form-control", placeholder="Posting URL") }}
             <br />
           </div>
         </div>
@@ -124,14 +111,12 @@
 </div>
 
 <script>
-  document
-    .querySelector('input[type="file"]')
-    .addEventListener("change", function (e) {
-      const fileName = e.target.files[0]?.name;
-      if (fileName) {
-        console.log("Selected file:", fileName);
-        // You can add more file preview functionality here
-      }
-    });
+  document.querySelector('input[type="file"]').addEventListener("change", function (e) {
+    const fileName = e.target.files[0]?.name;
+    if (fileName) {
+      console.log("Selected file:", fileName);
+      // You can add more file preview functionality here
+    }
+  });
 </script>
 {% endblock %}

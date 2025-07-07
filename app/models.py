@@ -111,3 +111,20 @@ class JobActivityTypes(db.Model):
             'id': self.id,
             'activity_type': self.activity_type
         }
+    
+class Settings(db.Model):
+    __tablename__ = 'settings'
+
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(50), nullable=False, unique=True)
+    value = db.Column(db.String(200), nullable=False)
+
+    def __repr__(self):
+        return f'<Setting {self.key}>'
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'key': self.key,
+            'value': self.value
+        }

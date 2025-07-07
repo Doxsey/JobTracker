@@ -319,9 +319,8 @@ class JobView {
     // Auto-dismiss success alerts after 3 seconds
     if (type === "success") {
       setTimeout(() => {
-        if (alertDiv.parentNode) {
-          alertDiv.remove();
-        }
+        alertDiv.classList.remove("show");
+        setTimeout(() => alertDiv.remove(), 150); // Wait for fade out
       }, 5000);
     }
   }
