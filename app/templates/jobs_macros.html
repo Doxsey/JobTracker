@@ -14,9 +14,12 @@
   </div>
 </div>
 
-{% endmacro %} {% macro job_row_with_additional_info(job) %} {% set has_activities = job.activities|length > 0 %} {% set
-has_notes = job.notes|length > 0 %} {% set has_files = job.resume_file or job.job_description_file or
-job.cover_letter_file %}
+{% endmacro %}
+
+{% macro job_row_with_additional_info(job) %}
+{% set has_activities = job.activities|length > 0 %}
+{% set has_notes = job.notes|length > 0 %}
+{% set has_files = job.resume_file or job.job_description_file or job.cover_letter_file %}
 
 <tr class="clickable-row" data-bs-target="#details-{{ job.id }}" aria-expanded="false">
   <td><i class="expand-icon">▼</i></td>
@@ -25,7 +28,7 @@ job.cover_letter_file %}
   <td>{{ job.location }}</td>
   <td>{{ job.remote_option }}</td>
   <td>${{ job.salary_range_low }} - ${{ job.salary_range_high }}</td>
-  <td>{{ job.created_dt.strftime('%Y-%m-%d') }}</td>
+  <td>{{ job.created_dt.strftime('%m-%d-%Y') }}</td>
   <td>{{action_buttons(job)}}</td>
 </tr>
 
@@ -34,40 +37,28 @@ job.cover_letter_file %}
     <div class="p-3">
       <div class="mb-3">
         {% if has_activities %}
-        <button
-          class="btn btn-sm btn-outline-secondary sub-detail-btn me-2"
-          data-bs-toggle="collapse"
-          data-bs-target="#activities-{{ job.id }}"
-          aria-expanded="false"
-        >
+        <button class="btn btn-sm btn-outline-secondary sub-detail-btn me-2" data-bs-toggle="collapse"
+          data-bs-target="#activities-{{ job.id }}" aria-expanded="false">
           <i class="nested-expand-icon">▼</i>
           Activities
         </button>
 
         {% endif %} {% if has_notes %}
-        <button
-          class="btn btn-sm btn-outline-secondary sub-detail-btn me-2"
-          data-bs-toggle="collapse"
-          data-bs-target="#notes-{{ job.id }}"
-          aria-expanded="false"
-        >
+        <button class="btn btn-sm btn-outline-secondary sub-detail-btn me-2" data-bs-toggle="collapse"
+          data-bs-target="#notes-{{ job.id }}" aria-expanded="false">
           <i class="nested-expand-icon">▼</i>
           Notes
         </button>
 
         {% endif %} {% if has_files %}
-        <button
-          class="btn btn-sm btn-outline-secondary sub-detail-btn me-2"
-          data-bs-toggle="collapse"
-          data-bs-target="#files-{{ job.id }}"
-          aria-expanded="false"
-        >
+        <button class="btn btn-sm btn-outline-secondary sub-detail-btn me-2" data-bs-toggle="collapse"
+          data-bs-target="#files-{{ job.id }}" aria-expanded="false">
           <i class="nested-expand-icon">▼</i>
           Files
         </button>
         {% endif %}
       </div>
-      {# TODO: Add formatting for different activities #} {% if has_activities %}
+      {% if has_activities %}
       <div class="collapse mb-3" id="activities-{{ job.id }}">
         <div class="card card-body sub-detail-row">
           <h5>Job Activity History</h5>
@@ -84,7 +75,7 @@ job.cover_letter_file %}
                 {% for job_activity in job.activities %}
                 <tr>
                   <td>{{ job_activity.activity_type }}</td>
-                  <td>{{ job_activity.activity_date.strftime('%Y-%m-%d') }}</td>
+                  <td>{{ job_activity.activity_date.strftime('%m-%d-%Y') }}</td>
                   <td>{{ job_activity.activity_brief }}</td>
                 </tr>
                 {% endfor %}
@@ -94,7 +85,9 @@ job.cover_letter_file %}
         </div>
       </div>
 
-      {% endif %} {% if has_notes %}
+      {% endif %}
+
+      {% if has_notes %}
       <div class="collapse mb-3" id="notes-{{ job.id }}">
         <div class="card card-body sub-detail-row">
           <h5>Notes</h5>
@@ -109,7 +102,7 @@ job.cover_letter_file %}
               <tbody>
                 {% for job_note in job.notes %}
                 <tr>
-                  <td>{{ job_note.created_at.strftime('%Y-%m-%d') }}</td>
+                  <td>{{ job_note.created_at.strftime('%m-%d-%Y') }}</td>
                   <td>{{ job_note.content }}</td>
                 </tr>
                 {% endfor %}
@@ -119,7 +112,8 @@ job.cover_letter_file %}
         </div>
       </div>
 
-      {% endif %} {% if has_files %}
+      {% endif %}
+      {% if has_files %}
       <div class="collapse mb-3" id="files-{{ job.id }}">
         <div class="card card-body sub-detail-row">
           <h5>Files</h5>
@@ -129,11 +123,13 @@ job.cover_letter_file %}
             <li class="list-group-item">
               <a href="{{ url_for('files.download_file', job_id=job.id, file_type='resume') }}">Resume</a>
             </li>
-            {% endif %} {% if job.cover_letter_file %}
+            {% endif %}
+            {% if job.cover_letter_file %}
             <li class="list-group-item">
               <a href="{{ url_for('files.download_file', job_id=job.id, file_type='cover_letter') }}">Cover Letter</a>
             </li>
-            {% endif %} {% if job.job_description_file %}
+            {% endif %}
+            {% if job.job_description_file %}
             <li class="list-group-item">
               <a href="{{ url_for('files.download_file', job_id=job.id, file_type='job_description') }}">
                 Job Description
@@ -148,7 +144,9 @@ job.cover_letter_file %}
   </td>
 </tr>
 
-{% endmacro %} {% macro job_row_without_activities(job) %}
+{% endmacro %}
+
+{% macro job_row_without_activities(job) %}
 <tr>
   <td></td>
   <td>{{ job.company }}</td>
@@ -156,11 +154,12 @@ job.cover_letter_file %}
   <td>{{ job.location }}</td>
   <td>{{ job.remote_option }}</td>
   <td>${{ job.salary_range_low }} - ${{ job.salary_range_high }}</td>
-  <td>{{ job.created_dt.strftime('%Y-%m-%d') }}</td>
+  <td>{{ job.created_dt.strftime('%m-%d-%Y') }}</td>
   <td>{{action_buttons(job)}}</td>
 </tr>
 
-{% endmacro %} {% macro action_buttons(job) %}
+{% endmacro %}
+{% macro action_buttons(job) %}
 <div class="dropdown">
   <button class="btn btn-primary dropdown-toggle btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
     Actions
@@ -184,7 +183,8 @@ job.cover_letter_file %}
   </ul>
 </div>
 
-{% endmacro %} {% macro job_display_top_of_page(job) %}
+{% endmacro %}
+{% macro job_display_top_of_page(job) %}
 <div class="card card-body sub-detail-row">
   <div class="row">
     <div class="col-md-4">
@@ -210,7 +210,7 @@ job.cover_letter_file %}
     <div class="col-md-4">
       <p>
         <strong>Date Created:</strong>
-        {{ job.created_dt.strftime('%Y-%m-%d') }}
+        {{ job.created_dt.strftime('%m-%d-%Y') }}
       </p>
       <p>
         <strong>Job ID:</strong>
