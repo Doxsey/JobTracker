@@ -212,13 +212,11 @@ def create():
                 cover_letter_file = form.cover_letter_file.data
                 
                 if use_default_resume:
-                    print("Using default resume")
                     resume_file = None
                     # Get the default resume filename from settings
                     default_resume_setting = Settings.query.filter_by(key='default_resume').first()
                     if default_resume_setting:
                         default_resume_file = default_resume_setting.value
-                        print(f"Using default resume file: {default_resume_file}")
                         file_path = os.path.join(current_app.config['FILE_STORAGE_PATH'], 'Resumes', default_resume_file)
 
                         if not os.path.exists(file_path):
@@ -235,9 +233,6 @@ def create():
                                     dest_file.write(src_file.read())
                         except Exception as e:
                             flash(f'Error using default resume file: {str(e)}', 'error')
-
-                # else:
-                #     resume_file = form.resume_file.data
 
                 if resume_file and not use_default_resume:
                     original_resume_filename = secure_filename(resume_file.filename)
