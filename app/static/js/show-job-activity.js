@@ -67,8 +67,8 @@ class ShowJobActivity {
           return response.json();
         })
         .then((result) => {
-          console.log("Activity added:", result);
-          // Optionally, update UI or reset form here
+          //   console.log("Activity added:", result);
+          window.location.href = "/";
         })
         .catch((error) => {
           console.error("Error adding activity:", error);

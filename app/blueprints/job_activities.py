@@ -78,6 +78,8 @@ def add():
                     'job_id': job_id,
                 }
 
+        flash('Job activity added successfully', 'success')
+
         return jsonify(response_data), 201
     except Exception as e:
         db.session.rollback()
