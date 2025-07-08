@@ -1,7 +1,8 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-import os
+from app.startup_tasks import run_startup_tasks
+import os, json
 
 db = SQLAlchemy()
 
@@ -10,17 +11,36 @@ db = SQLAlchemy()
 def create_app():
     app = Flask(__name__)
 
-    app_base_folder = 'C:/Users/Ryan/Documents/JobTracker'
+    settings_path = os.path.join(os.path.dirname(__file__), 'app_settings.json')
+    with open(settings_path, 'r') as f:
+        app_settings = json.load(f)
+
+    if "app_folder" not in app_settings:
+        raise KeyError("The 'app_folder' key is missing from app_settings.json.")
+
+    app_base_folder = app_settings.get("app_folder")
+
+    if not os.path.isabs(app_base_folder):
+        raise ValueError("The 'app_folder' value in app_settings.json must be an absolute path.")
+
+    parent_dir = os.path.dirname(app_base_folder)
+    if not os.path.exists(parent_dir):
+        raise FileNotFoundError(f"The parent directory '{parent_dir}' of 'app_folder' does not exist.")
+    
+    if os.path.exists(app_base_folder) and not os.path.isdir(app_base_folder):
+        raise NotADirectoryError(f"The path '{app_base_folder}' exists but is not a directory.")
+
+    if not isinstance(app_base_folder, str) or not app_base_folder.strip():
+        raise ValueError("The 'app_folder' value in app_settings.json must be a non-empty string.")
+
     file_storage_folder = f'{app_base_folder}/JobTrackerFiles'
 
     create_folders(app_base_folder, file_storage_folder)
-    
 
     # Configuration
     app.config['SECRET_KEY'] = 'your-secret-key-here'
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{app_base_folder}/app.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
 
     app.config['FILE_STORAGE_PATH'] = file_storage_folder
     app.config['LOCAL_TIMEZONE'] = 'America/Chicago'  # Set your local timezone here
@@ -47,62 +67,7 @@ def create_app():
     app.register_blueprint(files_bp, url_prefix='/files')
     app.register_blueprint(settings_bp, url_prefix='/settings')
 
-    # Create database tables
-    with app.app_context():
-        db.create_all()
-
-        # Load default JobActivityTypes if not present
-        from app.models import JobActivityTypes
-        default_types = [
-            # Application-Related Activities
-            "Application Submitted",
-            "Application Updated",
-            "Application Withdrawn",
-            "Referral Submitted",
-            "Resume Uploaded",
-            "Cover Letter Sent",
-
-            # Communication Activities
-            "Received Email",
-            "Sent Email",
-            "Received Phone Call",
-            "Left Voicemail",
-            "Sent Thank-You Email",
-            "Sent Follow-Up Email",
-
-            # Interview Activities
-            "Interview Scheduled",
-            "Phone Screen Completed",
-            "Technical Interview Completed",
-            "On-Site Interview Completed",
-            "Final Interview Completed",
-            "Interview Rescheduled",
-            "Interview Canceled",
-
-            # Company Actions
-            "Application Viewed by Recruiter",
-            "Application Moved to Next Round",
-            "Shortlisted for Interview",
-            "Offer Extended",
-            "Offer Negotiated",
-            "Offer Accepted",
-            "Offer Declined",
-            "Application Rejected",
-
-            # Other Helpful Events
-            "Job Saved",
-            "Job Posting Closed",
-            "Company Researched",
-            "Networking Contact Made",
-            "Notes Added",
-            "Reminder Set"
-        ]
-
-        for activity_type in default_types:
-            exists = JobActivityTypes.query.filter_by(activity_type=activity_type).first()
-            if not exists:
-                db.session.add(JobActivityTypes(activity_type=activity_type))
-        db.session.commit()
+    run_startup_tasks(db, app)
     
     return app
 
