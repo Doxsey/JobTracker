@@ -7,6 +7,7 @@ from flask_wtf.file import FileField, FileRequired, FileAllowed
 from wtforms.validators import DataRequired
 from werkzeug.utils import secure_filename
 from app.models import Job, Settings
+from ..services.api_service import APIService
 import os, uuid, json
 import requests
 
@@ -371,6 +372,8 @@ def close(job_id):
 
             closing_reason_json = json.dumps(closing_reason)
 
+            api = APIService()
+
             activity_data = {
                 "job_id": job.id,
                 "activity_type": "Job Posting Closed",
@@ -379,18 +382,13 @@ def close(job_id):
                 "activity_json_data": closing_reason_json
             }
 
-            # Construct the full API URL (adjust as needed for your app's routing)
-            api_url = url_for('job_activities.add', _external=True)
-
             try:
-                response = requests.post(api_url, json=activity_data)
+                response = api.create_job_activity(activity_data)
                 if response.status_code != 201:
                     flash('Failed to log job closing activity.', 'warning')
-                    print(f"Error logging job closing activity: {response.text}")
                     return render_template('jobs/close.html', job=job, form=form)
             except Exception as e:
                 flash('Error logging job closing activity.', 'warning')
-                print(f"Error sending POST to job_activities/api/create: {e}")
                 return render_template('jobs/close.html', job=job, form=form)
 
             job.posting_status = 'Closed'
