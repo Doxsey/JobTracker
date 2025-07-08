@@ -2,5 +2,6 @@ Flask
 Flask-SQLAlchemy
 flask-wtf
 Flask-Migrate
+gunicorn
 pytz
 requests
