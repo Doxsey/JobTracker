@@ -243,6 +243,16 @@ flask db upgrade
 flask db history
 ```
 
+## Todo
+
+- [x] View Job Activity Details
+- [ ] Improve Job Filtering
+- [ ] Calendar integration for interviews
+- [ ] Docker containerization
+- [ ] API documentation
+- [ ] Backup and restore functionality
+- [ ] Custom activity types
+
 ## Contributing
 
 1. Fork the repository
