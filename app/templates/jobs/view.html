@@ -1,4 +1,5 @@
 {% from "jobs_macros.html" import file_edit_card, file_add_card %}
+{% from "macros/job_activity_display_macros.html" import job_activity_modal %}
 {% extends "base.html" %}
 {% block title %}View Job{% endblock %}
 {% block content %}
@@ -204,7 +205,7 @@
         </div>
 
         <div class="row">
-          <table class="table">
+          <table class="table" id="job-notes-table">
             <thead>
               <tr>
                 <th scope="col" class="text-nowrap" style="width: 1%;">Date</th>
@@ -224,6 +225,43 @@
         </div>
       </div>
       {% endif %}
+
+      {% if job.activities %}
+      <div class="container my-3">
+        <div class="row">
+          <div class="col">
+            <h4>Job Activities</h4>
+          </div>
+        </div>
+
+        <div class="row">
+          <table class="table table-hover" id="job-activities-table">
+            <thead>
+              <tr>
+                <th scope="col" class="text-nowrap" style="width: 1%;">Date</th>
+                <th scope="col" class="text-nowrap" style="width: 20%;">Activity</th>
+                <th scope="col">Brief</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for job_activity in job.activities %}
+              <tr class="activity-row" data-activity-id="{{ job_activity.id }}"
+                data-activity-date="{{ job_activity.activity_date.strftime('%m-%d-%Y') }}"
+                data-activity-type="{{ job_activity.activity_type }}"
+                data-activity-brief="{{ job_activity.activity_brief }}"
+                data-activity-details="{{ job_activity.activity_json_data}}">
+                <td class="text-nowrap">{{ job_activity.activity_date.strftime('%m-%d-%Y') }}</td>
+                <td>{{ job_activity.activity_type }}</td>
+                <td>{{ job_activity.activity_brief }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {% endif %}
+
 
     </div>
 
@@ -247,6 +285,8 @@
         </div>
       </div>
     </div>
+
+    {{ job_activity_modal() }}
 
     <script src="{{ url_for('static', filename='js/view-job.js') }}"></script>
     <script>

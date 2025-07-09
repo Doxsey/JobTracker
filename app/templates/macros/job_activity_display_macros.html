@@ -1,0 +1,97 @@
+{% macro job_activity_modal() %}
+
+<!-- Activity Details Modal -->
+<div class="modal fade" id="activityDetailsModal" tabindex="-1" aria-labelledby="activityDetailsModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="activityDetailsModalLabel">Activity Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-md-4" id="modal-activity-info-left-col">
+                            <div class="row mb-3">
+                                <strong>Date:</strong>
+                                <span id="modal-activity-date"></span>
+                            </div>
+                            <div class="row mb-3">
+                                <strong>Activity Type:</strong>
+                                <span id="modal-activity-type"></span>
+                            </div>
+                            <div class="row mb-3">
+                                <strong>Brief:</strong>
+                                <p id="modal-activity-brief"></p>
+                            </div>
+                        </div>
+                        <div class="col-md-8" id="modal-activity-info-right-col">
+                            <div class="row mb-3">
+                                <strong>Activity Details:</strong>
+                                <div id="modal-activity-details"></div>
+                            </div>
+                            <div class="row mb-3" id="modal-activity-details-container">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const activityRows = document.querySelectorAll('.activity-row');
+        const activityModal = new bootstrap.Modal(document.getElementById('activityDetailsModal'));
+
+        activityRows.forEach(row => {
+            row.style.cursor = 'pointer';
+
+            row.addEventListener('click', function () {
+                // Get data from the clicked row
+                const activityDate = this.dataset.activityDate;
+                const activityType = this.dataset.activityType;
+                const activityBrief = this.dataset.activityBrief;
+                const activityDetails = this.dataset.activityDetails;
+
+                // Populate modal with data
+                document.getElementById('modal-activity-date').textContent = activityDate;
+                document.getElementById('modal-activity-type').textContent = activityType;
+                document.getElementById('modal-activity-brief').textContent = activityBrief;
+
+                // Parse and display activity details
+                const detailsContainer = document.getElementById('modal-activity-details-container');
+                if (activityDetails && activityDetails !== 'null') {
+                    try {
+                        // Convert Python dict format to JSON format
+                        const jsonString = activityDetails.replace(/'/g, '"');
+                        const details = JSON.parse(jsonString);
+                        let detailsHtml = '<ul class="list-group list-group-flush">';
+
+                        Object.entries(details).forEach(([key, value]) => {
+                            const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                            detailsHtml += `<li class="list-group-item"><strong>${formattedKey}:</strong> ${value}</li>`;
+                        });
+
+                        detailsHtml += '</ul>';
+                        detailsContainer.innerHTML = detailsHtml;
+                    } catch (e) {
+                        detailsContainer.innerHTML = '<p class="text-muted">No additional details available</p>';
+                    }
+                } else {
+                    detailsContainer.innerHTML = '<p class="text-muted">No additional details available</p>';
+                }
+
+                activityModal.show();
+            });
+        });
+    });
+
+</script>
+
+{% endmacro %}
