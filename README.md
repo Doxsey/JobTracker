@@ -14,11 +14,19 @@ A comprehensive Flask-based web application for tracking job applications, manag
 
 ### File Management
 
-- Upload multiple file types (PDF, DOC, DOCX, TEX)
+- Upload multiple file types (PDF, DOC, DOCX, TEX, TXT, PNG, JPG, JPEG, GIF, CSV, XLSX)
 - Download files with organized naming convention
 - Default resume functionality
 - File replacement and deletion
 - Secure file storage with unique naming
+
+### Backup & Restore System
+
+- **Complete Data Export**: Download full backup including database and all uploaded files
+- **Data Import**: Restore from previously exported backup files
+- **Database Maintenance**: Optimize SQLite database with VACUUM operations
+- **CSV Export**: Export job data to CSV format for external analysis
+- **Database-only Backup**: Export just the database file for quick backups
 
 ### Activity Types
 
@@ -37,6 +45,7 @@ The application comes pre-loaded with comprehensive activity types including:
 - Modal dialogs for activity details
 - Pagination for large datasets
 - File upload/download integration
+- Advanced search and filtering for activity types
 
 ## Installation
 
@@ -104,6 +113,33 @@ The application comes pre-loaded with comprehensive activity types including:
 
 The application will be available at `http://localhost:5000`
 
+## Docker Deployment
+
+### Production Deployment
+
+1. **Create production environment file**
+   ```bash
+   cp .env.production.example .env.production
+   # Edit with your production values
+   ```
+
+2. **Deploy using Docker Compose**
+   ```bash
+   # Using pre-built image from GitHub Container Registry
+   ENV_FILE=.env.production docker-compose -f docker-compose.prod.yml up -d
+   ```
+
+### Development with Docker
+
+```bash
+# Copy local environment file
+cp .env.example .env.local
+# Edit with your local values
+
+# Build and run
+ENV_FILE=.env.local docker-compose up -d
+```
+
 ## Configuration
 
 ### Environment Variables
@@ -120,6 +156,7 @@ The application uses environment variables for secure configuration:
 - Uses SQLite by default
 - Database location: `{APP_FOLDER}/app.db`
 - Automatic table creation and migrations
+- Built-in database optimization tools
 
 ### File Storage
 
@@ -170,6 +207,27 @@ Files are organized in the following structure:
 2. Write detailed notes about the position or application process
 3. Notes are automatically timestamped
 
+### Backup & Restore
+
+#### Creating Backups
+
+1. Navigate to Settings → "Access Backup & Restore Page"
+2. Click "Download Backup" for complete data export
+3. For database-only backup, use "Export Jobs to CSV" or database export options
+
+#### Restoring Data
+
+1. Go to Backup & Restore page
+2. Select your backup ZIP file
+3. Click "Replace All Data with Backup"
+4. **Warning**: This completely replaces all existing data
+
+#### Database Maintenance
+
+- Use "Optimize Database" to run SQLite VACUUM operation
+- Export data to CSV for external analysis
+- Monitor database size and performance through database info
+
 ## API Endpoints
 
 The application provides several API endpoints for programmatic access:
@@ -195,6 +253,13 @@ The application provides several API endpoints for programmatic access:
 - `POST /settings/api/update` - Update application settings
 - `POST /settings/api/upload_default_resume` - Upload default resume
 
+### Backup & Restore
+
+- `GET /backup/export-stream` - Download complete backup
+- `POST /backup/import` - Import backup data
+- `GET /backup/export-csv` - Export jobs to CSV
+- `POST /backup/vacuum-db` - Optimize database
+
 ## Database Schema
 
 ### Main Tables
@@ -219,6 +284,9 @@ job-tracker/
 ├── .env.example                # Environment variables template
 ├── run.py                      # Application entry point
 ├── requirements.txt            # Python dependencies
+├── Dockerfile                  # Docker configuration
+├── docker-compose.yml          # Development Docker setup
+├── docker-compose.prod.yml     # Production Docker setup
 ├── app/
 │   ├── __init__.py             # Application factory
 │   ├── models.py               # SQLAlchemy models
@@ -229,7 +297,8 @@ job-tracker/
 │   │   ├── job_activities.py   # Activity management
 │   │   ├── job_notes.py        # Notes functionality
 │   │   ├── files.py            # File operations
-│   │   └── settings.py         # Application settings
+│   │   ├── settings.py         # Application settings
+│   │   └── backup.py           # Backup & restore functionality
 │   ├── services/
 │   │   └── api_service.py      # Internal API service
 │   ├── static/                 # CSS, JavaScript, assets
@@ -246,6 +315,7 @@ job-tracker/
 - **SQL injection protection** through SQLAlchemy ORM
 - **CSRF protection** via Flask-WTF
 - **Secrets management** through environment variables (never committed to git)
+- **Docker security** with non-root user and proper permissions
 
 ## Troubleshooting
 
@@ -273,6 +343,11 @@ job-tracker/
    - Generate a new SECRET_KEY: `python -c "import secrets; print(secrets.token_hex(32))"`
    - Add it to your `.env` file
    - Never use the example/placeholder keys in production
+
+5. **Backup/Restore issues**
+   - Ensure sufficient disk space for backups
+   - Check file permissions on backup files
+   - Verify ZIP file integrity before restore
 
 ### Database Migration
 
@@ -308,20 +383,24 @@ SECRET_KEY=your-secure-production-key
 - [x] Responsive dark theme UI
 - [x] Secure environment-based configuration
 - [x] Database migrations support
+- [x] Comprehensive backup and restore system
+- [x] Docker deployment support
+- [x] Database optimization tools
+- [x] CSV export functionality
 
 ### In Progress 🚧
 
 - [ ] Advanced search and filtering
-- [ ] Data export functionality
+- [ ] Email notifications
 
 ### Planned Features 📋
 
 - [ ] Dashboard with analytics
-- [ ] Email notifications
 - [ ] Calendar integration for interviews
-- [ ] Docker deployment
 - [ ] API documentation
 - [ ] Automated testing suite
+- [ ] Multi-user support
+- [ ] Role-based access control
 
 ## Contributing
 
@@ -338,7 +417,7 @@ This project is licensed under Custom Non-Commercial License - see the [LICENSE]
 ### Commercial Use
 
 This software is free for personal and educational use. Commercial use requires explicit permission.
-For commercial licensing inquiries, please contact [doxsey.gh@tuss.mozmail].
+For commercial licensing inquiries, please contact [doxsey.gh@tuss.mozmail.com].
 
 ## Support
 
