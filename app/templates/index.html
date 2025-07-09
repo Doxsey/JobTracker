@@ -1,5 +1,6 @@
 {% from "macros/jobs_macros.html" import job_row_with_activities, job_row_without_activities,
 job_row_with_additional_info %}
+{% from "macros/job_activity_display_macros.html" import job_activity_modal %}
 {% from "macros/pagination_macro.html" import render_pagination, render_per_page_selector %}
 {% extends "base.html" %}
 {% block title %}Home - Job Tracker{% endblock %}
@@ -58,6 +59,8 @@ job_row_with_additional_info %}
     </div>
   </div>
 </div>
+
+{{ job_activity_modal() }}
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
