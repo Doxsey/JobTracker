@@ -27,7 +27,7 @@
   <td>{{ job.title }}</td>
   <td>{{ job.location }}</td>
   <td>{{ job.remote_option }}</td>
-  <td>${{ job.salary_range_low }} - ${{ job.salary_range_high }}</td>
+  <td>${{ "{:,.0f}".format(job.salary_range_low) }} - ${{ "{:,.0f}".format(job.salary_range_high) }}</td>
   <td>{{ job.created_dt.strftime('%m-%d-%Y') }}</td>
   <td>{{action_buttons(job)}}</td>
 </tr>
