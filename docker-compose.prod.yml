@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  job-tracker:
+    image: ghcr.io/doxsey/job-tracker:latest
+    ports:
+      - "5000:5000"
+    env_file:
+      - ${ENV_FILE:-.env.production}       # ← Defaults to .env.production, but can be overridden
+    environment:
+      - APP_FOLDER=/app/data
+      - FLASK_ENV=production
+    volumes:
+      - job_tracker_data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  job_tracker_data:
+    driver: local
