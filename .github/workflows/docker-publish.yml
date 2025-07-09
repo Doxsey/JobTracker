@@ -3,6 +3,11 @@ env:
   IMAGE_NAME: job-tracker
   OWNER: doxsey
 
+on:
+  push:
+    branches:
+      - main
+
 jobs:
   build:
     runs-on: ubuntu-latest
