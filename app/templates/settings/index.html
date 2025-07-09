@@ -14,7 +14,6 @@ endblock
             <div class="col">
               <div class="row-md-6">
                 {% for current_setting in current_settings%} {% if current_setting.key == "default_resume" %}
-                <!-- prettier-ignore -->
                 <strong class="me-2">Default resume has been set:</strong>
                 <button type="button" class="btn btn-primary btn-sm" id="download-resume-btn">Download</button>
                 <button type="button" class="btn btn-danger btn-sm" id="delete-resume-btn">Delete</button>
@@ -30,6 +29,15 @@ endblock
                 <button type="button" class="btn btn-secondary btn-sm" id="upload-new-btn">Upload</button>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div class="card m-3" style="min-width: 50%; width: auto">
+          <div class="card-body">
+            <h5 class="card-title">Import/Export Data</h5>
+            <hr />
+            <a href="{{ url_for('backup.index') }}" class="btn btn-warning" role="button">Access Backup & Restore
+              Page</a>
           </div>
         </div>
       </div>
