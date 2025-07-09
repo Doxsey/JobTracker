@@ -1,5 +1,6 @@
-{% from "jobs_macros.html" import job_row_with_activities, job_row_without_activities, job_row_with_additional_info %}
-{% from "pagination_macro.html" import render_pagination, render_per_page_selector %}
+{% from "macros/jobs_macros.html" import job_row_with_activities, job_row_without_activities,
+job_row_with_additional_info %}
+{% from "macros/pagination_macro.html" import render_pagination, render_per_page_selector %}
 {% extends "base.html" %}
 {% block title %}Home - Job Tracker{% endblock %}
 {% block content %}
