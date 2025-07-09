@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Backup - Job Tracker{% endblock %}
+{% block content %}
+
+
+<div class="container mb-5">
+    <div class="row">
+
+        <div class="card" style="width: auto;">
+            <div class="card-body">
+                <h5 class="card-title">Export Data</h5>
+                <h6 class="card-subtitle mb-2 text-body-secondary">Exports all data and files</h6>
+                <a href="{{ url_for('backup.export_data_stream') }}" class="btn btn-primary">Start Export</a>
+            </div>
+        </div>
+
+
+
+
+    </div>
+
+
+
+</div>
+
+
+{% endblock %}

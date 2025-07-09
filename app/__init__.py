@@ -54,6 +54,7 @@ def create_app(config_name=None):
     from app.blueprints.select_activity import select_activity_bp
     from app.blueprints.files import files_bp
     from app.blueprints.settings import settings_bp
+    from app.blueprints.backup import backup_bp
     
     app.register_blueprint(main_bp)
     app.register_blueprint(jobs_bp, url_prefix='/jobs')
@@ -62,6 +63,7 @@ def create_app(config_name=None):
     app.register_blueprint(select_activity_bp, url_prefix='/select_activity')
     app.register_blueprint(files_bp, url_prefix='/files')
     app.register_blueprint(settings_bp, url_prefix='/settings')
+    app.register_blueprint(backup_bp, url_prefix='/backup')
 
     run_startup_tasks(db, app)
     
