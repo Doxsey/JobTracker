@@ -71,14 +71,7 @@ The application comes pre-loaded with comprehensive activity types including:
 
    > **Important**: Use an absolute path for the app_folder
 
-4. **Initialize the database**
-
-   ```bash
-   flask db migrate -m "Initial migration"
-   flask db upgrade
-   ```
-
-5. **Run the application**
+4. **Run the application**
    ```bash
    python run.py
    ```
@@ -110,7 +103,7 @@ Files are organized in the following structure:
 
 - **Local Timezone**: Configured in `app/__init__.py` (default: America/Chicago)
 - **File Size Limit**: 16MB maximum
-- **Supported File Types**: PDF, DOC, DOCX, TEX, TXT, PNG, JPG, JPEG, GIF, CSV, XLSX
+- **Supported File Types**: PDF, DOC, DOCX, TEX
 
 ## Usage
 
@@ -265,7 +258,7 @@ This project is licensed under [Custom Non-Commercial License / CC BY-NC 4.0] - 
 ### Commercial Use
 
 This software is free for personal and educational use. Commercial use requires explicit permission.
-For commercial licensing inquiries, please contact [doxsey.gh@tuss.mozmail.com].
+For commercial licensing inquiries, please contact doxsey.gh@tuss.mozmail.com.
 
 ## Support
 
