@@ -60,18 +60,44 @@ The application comes pre-loaded with comprehensive activity types including:
    pip install -r requirements.txt
    ```
 
-3. **Configure application settings**
-   Edit `app/app_settings.json`:
+3. **Configure environment variables**
 
-   ```json
-   {
-     "app_folder": "/absolute/path/to/your/data/folder"
-   }
+   ```bash
+   # Copy the example environment file
+   cp .env.example .env
    ```
 
-   > **Important**: Use an absolute path for the app_folder
+   Edit `.env` file with your actual values:
 
-4. **Run the application**
+   ```bash
+   # Generate a secure secret key (run this command to generate one):
+   # python -c "import secrets; print(secrets.token_hex(32))"
+   SECRET_KEY=your-generated-secret-key-here
+
+   # Set your data folder path (use absolute path)
+   APP_FOLDER=/absolute/path/to/your/data/folder
+
+   # Optional: Set your timezone (defaults to America/Chicago)
+   LOCAL_TIMEZONE=America/Chicago
+
+   # Environment setting
+   FLASK_ENV=development
+   ```
+
+   > **Important**:
+   >
+   > - Use an absolute path for APP_FOLDER
+   > - Generate a secure SECRET_KEY using the command shown above
+   > - Never commit your `.env` file to version control
+
+4. **Initialize the database**
+
+   ```bash
+   flask db migrate -m "Initial migration"
+   flask db upgrade
+   ```
+
+5. **Run the application**
    ```bash
    python run.py
    ```
@@ -80,10 +106,19 @@ The application will be available at `http://localhost:5000`
 
 ## Configuration
 
+### Environment Variables
+
+The application uses environment variables for secure configuration:
+
+- **SECRET_KEY**: Flask secret key for sessions and CSRF protection
+- **APP_FOLDER**: Absolute path to data storage directory
+- **LOCAL_TIMEZONE**: Your local timezone (default: America/Chicago)
+- **FLASK_ENV**: Environment setting (development/production)
+
 ### Database
 
 - Uses SQLite by default
-- Database location: `{app_folder}/app.db`
+- Database location: `{APP_FOLDER}/app.db`
 - Automatic table creation and migrations
 
 ### File Storage
@@ -91,7 +126,7 @@ The application will be available at `http://localhost:5000`
 Files are organized in the following structure:
 
 ```
-{app_folder}/
+{APP_FOLDER}/
 ├── app.db
 └── JobTrackerFiles/
     ├── Resumes/
@@ -99,11 +134,11 @@ Files are organized in the following structure:
     └── Job_Descriptions/
 ```
 
-### Settings
+### Application Settings
 
-- **Local Timezone**: Configured in `app/__init__.py` (default: America/Chicago)
 - **File Size Limit**: 16MB maximum
-- **Supported File Types**: PDF, DOC, DOCX, TEX
+- **Supported File Types**: PDF, DOC, DOCX, TEX, TXT, PNG, JPG, JPEG, GIF, CSV, XLSX
+- **Security**: Environment-based configuration with secure secret key management
 
 ## Usage
 
@@ -180,55 +215,64 @@ The application provides several API endpoints for programmatic access:
 
 ```
 job-tracker/
-├── app/
-│   ├── __init__.py              # Application factory
-│   ├── models.py                # SQLAlchemy models
-│   ├── startup_tasks.py         # Database initialization
-│   ├── app_settings.json        # Configuration file
-│   ├── blueprints/              # Route modules
-│   │   ├── main.py              # Main pages
-│   │   ├── jobs.py              # Job CRUD operations
-│   │   ├── job_activities.py    # Activity management
-│   │   ├── job_notes.py         # Notes functionality
-│   │   ├── files.py             # File operations
-│   │   └── settings.py          # Application settings
-│   ├── services/
-│   │   └── api_service.py       # Internal API service
-│   ├── static/                  # CSS, JavaScript, assets
-│   └── templates/               # Jinja2 templates
-├── migrations/                  # Database migrations
-├── requirements.txt             # Python dependencies
+├── config.py                   # Application configuration
+├── .env.example                # Environment variables template
 ├── run.py                      # Application entry point
+├── requirements.txt            # Python dependencies
+├── app/
+│   ├── __init__.py             # Application factory
+│   ├── models.py               # SQLAlchemy models
+│   ├── startup_tasks.py        # Database initialization
+│   ├── blueprints/             # Route modules
+│   │   ├── main.py             # Main pages
+│   │   ├── jobs.py             # Job CRUD operations
+│   │   ├── job_activities.py   # Activity management
+│   │   ├── job_notes.py        # Notes functionality
+│   │   ├── files.py            # File operations
+│   │   └── settings.py         # Application settings
+│   ├── services/
+│   │   └── api_service.py      # Internal API service
+│   ├── static/                 # CSS, JavaScript, assets
+│   └── templates/              # Jinja2 templates
+├── migrations/                 # Database migrations
 └── README.md                   # This file
 ```
 
 ## Security Considerations
 
-- File uploads use secure filename generation
-- Unique UUID-based file naming prevents conflicts
-- File type validation on upload
-- SQL injection protection through SQLAlchemy ORM
-- CSRF protection via Flask-WTF
+- **Environment-based configuration** with secure secret key management
+- **File uploads** use secure filename generation with UUID-based naming
+- **File type validation** on upload prevents malicious files
+- **SQL injection protection** through SQLAlchemy ORM
+- **CSRF protection** via Flask-WTF
+- **Secrets management** through environment variables (never committed to git)
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Database not found**
+1. **Application won't start**
 
-   - Ensure app_folder path exists and is writable
-   - Run database migrations
+   - Verify `.env` file exists and has valid values
+   - Ensure APP_FOLDER path exists and is writable
+   - Check that SECRET_KEY is set
+   - Verify all dependencies are installed
 
-2. **File upload failures**
+2. **Database not found**
+
+   - Ensure APP_FOLDER path exists and is writable
+   - Run database migrations: `flask db upgrade`
+
+3. **File upload failures**
 
    - Check file size (16MB limit)
    - Verify file type is supported
    - Ensure storage directory permissions
 
-3. **Application won't start**
-   - Verify app_settings.json has valid absolute path
-   - Check all dependencies are installed
-   - Ensure Python version compatibility
+4. **Secret key errors**
+   - Generate a new SECRET_KEY: `python -c "import secrets; print(secrets.token_hex(32))"`
+   - Add it to your `.env` file
+   - Never use the example/placeholder keys in production
 
 ### Database Migration
 
@@ -243,15 +287,41 @@ flask db upgrade
 flask db history
 ```
 
-## Todo
+### Environment Setup for Different Environments
 
-- [x] View Job Activity Details
-- [ ] Improve Job Filtering
+```bash
+# Development
+FLASK_ENV=development
+
+# Production
+FLASK_ENV=production
+SECRET_KEY=your-secure-production-key
+```
+
+## Roadmap
+
+### Completed ✅
+
+- [x] Basic job CRUD operations
+- [x] File upload/download functionality
+- [x] Activity tracking system
+- [x] Responsive dark theme UI
+- [x] Secure environment-based configuration
+- [x] Database migrations support
+
+### In Progress 🚧
+
+- [ ] Advanced search and filtering
+- [ ] Data export functionality
+
+### Planned Features 📋
+
+- [ ] Dashboard with analytics
+- [ ] Email notifications
 - [ ] Calendar integration for interviews
-- [ ] Docker containerization
+- [ ] Docker deployment
 - [ ] API documentation
-- [ ] Backup and restore functionality
-- [ ] Custom activity types
+- [ ] Automated testing suite
 
 ## Contributing
 
@@ -263,12 +333,12 @@ flask db history
 
 ## License
 
-This project is licensed under [Custom Non-Commercial License / CC BY-NC 4.0] - see the [LICENSE](LICENSE) file for details.
+This project is licensed under Custom Non-Commercial License - see the [LICENSE](LICENSE) file for details.
 
 ### Commercial Use
 
 This software is free for personal and educational use. Commercial use requires explicit permission.
-For commercial licensing inquiries, please contact doxsey.gh@tuss.mozmail.com.
+For commercial licensing inquiries, please contact [doxsey.gh@tuss.mozmail].
 
 ## Support
 
