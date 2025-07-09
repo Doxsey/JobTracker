@@ -2,52 +2,48 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from app.startup_tasks import run_startup_tasks
-import os, json
+import os
 
 db = SQLAlchemy()
 
-
-
-def create_app():
+def create_app(config_name=None):
     app = Flask(__name__)
-
-    settings_path = os.path.join(os.path.dirname(__file__), 'app_settings.json')
-    with open(settings_path, 'r') as f:
-        app_settings = json.load(f)
-
-    if "app_folder" not in app_settings:
-        raise KeyError("The 'app_folder' key is missing from app_settings.json.")
-
-    app_base_folder = app_settings.get("app_folder")
-
-    if not os.path.isabs(app_base_folder):
-        raise ValueError("The 'app_folder' value in app_settings.json must be an absolute path.")
-
-    parent_dir = os.path.dirname(app_base_folder)
-    if not os.path.exists(parent_dir):
-        raise FileNotFoundError(f"The parent directory '{parent_dir}' of 'app_folder' does not exist.")
     
-    if os.path.exists(app_base_folder) and not os.path.isdir(app_base_folder):
-        raise NotADirectoryError(f"The path '{app_base_folder}' exists but is not a directory.")
+    # Import configuration
+    from config import config
+    
+    # Determine config environment
+    config_name = config_name or os.environ.get('FLASK_ENV', 'development')
+    app_config = config.get(config_name, config['default'])
+    
+    # Apply configuration
+    app.config.from_object(app_config)
+    
+    # Get app folder from config
+    app_folder = app.config.get('APP_FOLDER') or app_config.APP_FOLDER
+    file_storage_folder = f'{app_folder}/JobTrackerFiles'
+    
+    # Validation
+    if not os.path.isabs(app_folder):
+        raise ValueError("The 'APP_FOLDER' must be an absolute path.")
 
-    if not isinstance(app_base_folder, str) or not app_base_folder.strip():
-        raise ValueError("The 'app_folder' value in app_settings.json must be a non-empty string.")
+    parent_dir = os.path.dirname(app_folder)
+    if not os.path.exists(parent_dir):
+        raise FileNotFoundError(f"The parent directory '{parent_dir}' of 'APP_FOLDER' does not exist.")
+    
+    if os.path.exists(app_folder) and not os.path.isdir(app_folder):
+        raise NotADirectoryError(f"The path '{app_folder}' exists but is not a directory.")
 
-    file_storage_folder = f'{app_base_folder}/JobTrackerFiles'
+    # Create folders
+    create_folders(app_folder, file_storage_folder)
 
-    create_folders(app_base_folder, file_storage_folder)
-
-    # Configuration
-    app.config['SECRET_KEY'] = 'your-secret-key-here'
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{app_base_folder}/app.db'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
+    # Set additional configuration
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{app_folder}/app.db'
     app.config['FILE_STORAGE_PATH'] = file_storage_folder
-    app.config['LOCAL_TIMEZONE'] = 'America/Chicago'  # Set your local timezone here
+    app.config['LOCAL_TIMEZONE'] = getattr(app_config, 'LOCAL_TIMEZONE', 'America/Chicago')
 
     # Initialize extensions
     db.init_app(app)
-
     migrate = Migrate(app, db)
     
     # Register blueprints
