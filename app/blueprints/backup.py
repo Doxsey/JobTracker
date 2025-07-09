@@ -104,69 +104,11 @@ def create_manifest_data():
     
     return json.dumps(manifest, indent=2)
 
-@backup_bp.route('/export', methods=['GET'])
-def export_data():
-    """Export all data as a ZIP file using SQLite's native backup"""
-    try:
-        # Create temporary directory
-        temp_dir = tempfile.mkdtemp()
-        export_dir = os.path.join(temp_dir, 'job_tracker_export')
-        os.makedirs(export_dir)
-        
-        try:
-            # Get current database path
-            db_path = current_app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', '')
-            backup_db_path = os.path.join(export_dir, 'app.db')
-            
-            # Use SQLite's native backup
-            backup_database_sqlite(db_path, backup_db_path)
-            
-            # Copy files
-            copy_files_to_export(export_dir)
-            
-            # Create manifest file with metadata
-            create_export_manifest(export_dir)
-            
-            # Create ZIP file in a different temporary location
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            zip_filename = f'job_tracker_backup_{timestamp}.zip'
-            
-            # Use a separate temporary file for the ZIP
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.zip') as temp_zip:
-                zip_path = temp_zip.name
-            
-            # Create the ZIP file
-            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                for root, dirs, files in os.walk(export_dir):
-                    for file in files:
-                        file_path = os.path.join(root, file)
-                        arcname = os.path.relpath(file_path, export_dir)
-                        zipf.write(file_path, arcname)
-            
-            # Clean up the export directory
-            shutil.rmtree(temp_dir)
-            
-            # Send the file and mark it for deletion after sending
-            return send_file(
-                zip_path, 
-                as_attachment=True, 
-                download_name=zip_filename,
-                mimetype='application/zip'
-            )
-            
-        except Exception as e:
-            # Clean up on error
-            if os.path.exists(temp_dir):
-                shutil.rmtree(temp_dir, ignore_errors=True)
-            raise e
-            
-    except Exception as e:
-        flash(f'Export failed: {str(e)}', 'danger')
-        return redirect(url_for('settings.index'))
+
 
 @backup_bp.route('/import', methods=['POST'])
 def import_data():
-    """Import data from uploaded ZIP file"""
+    """Import data from uploaded ZIP file - REPLACES all existing data"""
     if 'backup_file' not in request.files:
         return jsonify({'error': 'No file uploaded'}), 400
     
@@ -192,19 +134,21 @@ def import_data():
             if not validate_backup(extract_dir):
                 return jsonify({'error': 'Invalid backup file format'}), 400
             
-            # Close all database connections
+            # Close all database connections before replacing database
             db.session.close()
             db.engine.dispose()
             
-            # Restore database
+            # Replace database and files completely
             restore_database_sqlite(extract_dir)
-            
-            # Restore files
             restore_files_from_backup(extract_dir)
             
-        return jsonify({'success': True, 'message': 'Import completed successfully'}), 200
+        return jsonify({
+            'success': True, 
+            'message': 'Import completed successfully. All previous data has been replaced.'
+        }), 200
         
     except Exception as e:
+        db.session.rollback()
         return jsonify({'error': f'Import failed: {str(e)}'}), 500
 
 @backup_bp.route('/export-db-only', methods=['GET'])
@@ -227,6 +171,43 @@ def export_database_only():
             
     except Exception as e:
         return jsonify({'error': f'Database export failed: {str(e)}'}), 500
+
+@backup_bp.route('/export-csv', methods=['GET'])
+def export_csv():
+    """Export jobs data to CSV"""
+    import csv
+    import io
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Write header
+    writer.writerow([
+        'ID', 'Company', 'Title', 'Location', 'Remote Option', 
+        'Salary Low', 'Salary High', 'Posting ID', 'Created Date',
+        'Status', 'Description', 'Referrer', 'Company Website', 'Posting URL'
+    ])
+    
+    # Write job data
+    from app.models import Job
+    jobs = Job.query.all()
+    for job in jobs:
+        writer.writerow([
+            job.id, job.company, job.title, job.location, job.remote_option,
+            job.salary_range_low, job.salary_range_high, job.posting_id,
+            job.created_dt.strftime('%Y-%m-%d') if job.created_dt else '',
+            job.posting_status, job.description, job.referrer,
+            job.company_website, job.posting_url
+        ])
+    
+    output.seek(0)
+    return Response(
+        output.getvalue(),
+        mimetype='text/csv',
+        headers={
+            'Content-Disposition': f'attachment; filename=job_tracker_jobs_{datetime.now().strftime("%Y%m%d")}.csv'
+        }
+    )
 
 def backup_database_sqlite(source_db_path, backup_db_path):
     """Use SQLite's native backup API with Windows compatibility"""
@@ -327,46 +308,23 @@ def restore_database_sqlite(extract_dir):
         # Fallback: Simple file copy
         shutil.copy2(backup_db_path, current_db_path)
 
-def copy_files_to_export(export_dir):
-    """Copy all uploaded files to export directory"""
-    file_storage_path = current_app.config['FILE_STORAGE_PATH']
-    if os.path.exists(file_storage_path):
-        shutil.copytree(file_storage_path, os.path.join(export_dir, 'JobTrackerFiles'))
-
 def restore_files_from_backup(extract_dir):
-    """Restore files from backup"""
+    """Restore files from backup - REPLACES all existing files"""
     source_files_dir = os.path.join(extract_dir, 'JobTrackerFiles')
     if os.path.exists(source_files_dir):
         dest_files_dir = current_app.config['FILE_STORAGE_PATH']
         
-        # Backup current files
+        # Create backup of current files before replacing
         if os.path.exists(dest_files_dir):
             backup_files_dir = f"{dest_files_dir}.backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            print(f"Creating backup of existing files at: {backup_files_dir}")
             shutil.move(dest_files_dir, backup_files_dir)
         
-        # Restore files
+        # Replace with backup files
         shutil.copytree(source_files_dir, dest_files_dir)
-
-def create_export_manifest(export_dir):
-    """Create a manifest file with backup metadata"""
-    import json
-    from app.models import Job, JobNotes, JobActivities
-    
-    manifest = {
-        'backup_version': '1.0',
-        'created_at': datetime.now().isoformat(),
-        'database_file': 'app.db',
-        'files_directory': 'JobTrackerFiles',
-        'statistics': {
-            'total_jobs': Job.query.count(),
-            'total_notes': JobNotes.query.count(),
-            'total_activities': JobActivities.query.count(),
-        },
-        'application_version': '1.0'  # You can make this dynamic
-    }
-    
-    with open(os.path.join(export_dir, 'manifest.json'), 'w') as f:
-        json.dump(manifest, f, indent=2)
+        print(f"Files restored from backup to: {dest_files_dir}")
+    else:
+        print("No files directory found in backup - skipping file restoration")
 
 def validate_backup(extract_dir):
     """Validate backup file structure"""

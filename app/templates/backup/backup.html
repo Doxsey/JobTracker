@@ -1,27 +1,190 @@
+<!-- app/templates/settings/backup.html -->
 {% extends "base.html" %}
-{% block title %}Backup - Job Tracker{% endblock %}
+{% block title %}Backup & Restore{% endblock %}
 {% block content %}
 
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <p class="lead">Backup & Restore</p>
 
-<div class="container mb-5">
-    <div class="row">
+            <!-- Export Section -->
+            <div class="row mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-download me-2"></i>
+                            Export Data
+                        </h5>
+                        <p class="card-text">
+                            Download a complete backup of your job tracker data including database and all uploaded
+                            files.
+                        </p>
+                        <a href="{{ url_for('backup.export_data_stream') }}" class="btn btn-success">
+                            <i class="bi bi-download me-2"></i>
+                            Download Backup
+                        </a>
+                    </div>
+                </div>
+            </div>
 
-        <div class="card" style="width: auto;">
-            <div class="card-body">
-                <h5 class="card-title">Export Data</h5>
-                <h6 class="card-subtitle mb-2 text-body-secondary">Exports all data and files</h6>
-                <a href="{{ url_for('backup.export_data_stream') }}" class="btn btn-primary">Start Export</a>
+            <!-- Import Section -->
+            <div class="row mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-upload me-2"></i>
+                            Import Data
+                        </h5>
+                        <p class="card-text">
+                            Restore data from a previously exported backup file.
+                        </p>
+
+                        <div class="alert alert-warning" role="alert">
+                            <strong>Warning:</strong> This will completely replace all existing data including jobs,
+                            activities, notes, and files. Make sure to export your current data first if you want to
+                            keep it.
+                        </div>
+
+                        <form id="importForm" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="backupFile" class="form-label">Select Backup File</label>
+                                <input type="file" class="form-control" id="backupFile" name="backup_file" accept=".zip"
+                                    required>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary" id="importBtn">
+                                <i class="bi bi-upload me-2"></i>
+                                Replace All Data with Backup
+                            </button>
+                        </form>
+
+                        <!-- Progress indicator -->
+                        <div id="importProgress" class="mt-3" style="display: none;">
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+                                    style="width: 100%"></div>
+                            </div>
+                            <p class="mt-2">Importing data... Please wait.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="row mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-gear me-2"></i>
+                            Database Maintenance
+                        </h5>
+                        <p class="card-text">
+                            Additional database operations.
+                        </p>
+
+                        <button type="button" class="btn btn-outline-info me-2" id="exportCsvBtn">
+                            <i class="bi bi-file-earmark-spreadsheet me-2"></i>
+                            Export Jobs to CSV
+                        </button>
+
+                        <button type="button" class="btn btn-outline-secondary" id="vacuumDbBtn">
+                            <i class="bi bi-arrow-clockwise me-2"></i>
+                            Optimize Database
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
-
-
-
-
     </div>
-
-
-
 </div>
 
+<!-- Alert container for messages -->
+<div id="alertContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 11">
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const importForm = document.getElementById('importForm');
+        const importBtn = document.getElementById('importBtn');
+        const importProgress = document.getElementById('importProgress');
+        const exportCsvBtn = document.getElementById('exportCsvBtn');
+        const vacuumDbBtn = document.getElementById('vacuumDbBtn');
+
+        // Handle import form submission
+        importForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const formData = new FormData(importForm);
+
+            // Show progress
+            importBtn.disabled = true;
+            importProgress.style.display = 'block';
+
+            fetch('{{ url_for("backup.import_data") }}', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('Success!', data.message, 'success');
+                        importForm.reset();
+                        // Optionally redirect to main page
+                        setTimeout(() => {
+                            window.location.href = '{{ url_for("main.index") }}';
+                        }, 5000);
+                    } else {
+                        showAlert('Error!', data.error, 'danger');
+                    }
+                })
+                .catch(error => {
+                    showAlert('Error!', 'An error occurred during import: ' + error.message, 'danger');
+                })
+                .finally(() => {
+                    importBtn.disabled = false;
+                    importProgress.style.display = 'none';
+                });
+        });
+
+        // CSV Export
+        exportCsvBtn.addEventListener('click', function () {
+            window.location.href = '{{ url_for("backup.export_csv") }}';
+        });
+
+        // Database vacuum
+        vacuumDbBtn.addEventListener('click', function () {
+            if (confirm('This will optimize the database. Continue?')) {
+                fetch('{{ url_for("backup.vacuum_database") }}', {
+                    method: 'POST'
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showAlert('Success!', 'Database optimized successfully.', 'success');
+                        } else {
+                            showAlert('Error!', data.error, 'danger');
+                        }
+                    });
+            }
+        });
+
+        function showAlert(title, message, type = 'info') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+            <strong>${title}</strong> ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+            alertContainer.appendChild(alertDiv);
+
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+    });
+</script>
 
 {% endblock %}
