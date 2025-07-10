@@ -230,12 +230,15 @@
               {% for job_note in job.notes %}
               <tr>
                 <td class="text-nowrap">{{ job_note.created_at.strftime('%m-%d-%Y') }}</td>
-                <td>{{ job_note.content }}</td>
+                <td>
+                  <div class="rich-text-display">
+                    {{ job_note.content | safe }}
+                  </div>
+                </td>
               </tr>
               {% endfor %}
             </tbody>
           </table>
-
         </div>
       </div>
       {% endif %}

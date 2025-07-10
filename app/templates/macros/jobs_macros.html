@@ -107,7 +107,11 @@
                 {% for job_note in job.notes %}
                 <tr>
                   <td>{{ job_note.created_at.strftime('%m-%d-%Y') }}</td>
-                  <td>{{ job_note.content }}</td>
+                  <td>
+                    <div class="rich-text-display" style="max-height: 200px; overflow-y: auto;">
+                      {{ job_note.content | safe }}
+                    </div>
+                  </td>
                 </tr>
                 {% endfor %}
               </tbody>
@@ -115,8 +119,8 @@
           </div>
         </div>
       </div>
-
       {% endif %}
+
       {% if has_files %}
       <div class="collapse mb-3" id="files-{{ job.id }}">
         <div class="card card-body sub-detail-row">
