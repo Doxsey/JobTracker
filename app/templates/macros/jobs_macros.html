@@ -43,14 +43,16 @@
           Activities
         </button>
 
-        {% endif %} {% if has_notes %}
+        {% endif %}
+        {% if has_notes %}
         <button class="btn btn-sm btn-outline-secondary sub-detail-btn me-2" data-bs-toggle="collapse"
           data-bs-target="#notes-{{ job.id }}" aria-expanded="false">
           <i class="nested-expand-icon">▼</i>
           Notes
         </button>
 
-        {% endif %} {% if has_files %}
+        {% endif %}
+        {% if has_files %}
         <button class="btn btn-sm btn-outline-secondary sub-detail-btn me-2" data-bs-toggle="collapse"
           data-bs-target="#files-{{ job.id }}" aria-expanded="false">
           <i class="nested-expand-icon">▼</i>
@@ -94,22 +96,40 @@
       {% if has_notes %}
       <div class="collapse mb-3" id="notes-{{ job.id }}">
         <div class="card card-body sub-detail-row">
-          <h5>Notes</h5>
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5>Notes</h5>
+            <a href="{{ url_for('job_notes.create', job_id=job.id) }}" class="btn btn-success btn-sm">
+              <i class="bi bi-plus-circle me-1"></i>Add Note
+            </a>
+          </div>
           <div class="table-responsive">
             <table class="table table-sm">
               <thead>
                 <tr>
                   <th>Date</th>
                   <th>Note</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {% for job_note in job.notes %}
                 <tr>
-                  <td>{{ job_note.created_at.strftime('%m-%d-%Y') }}</td>
+                  <td class="text-nowrap">{{ job_note.created_at.strftime('%m-%d-%Y') }}</td>
                   <td>
                     <div class="rich-text-display" style="max-height: 200px; overflow-y: auto;">
                       {{ job_note.content | safe }}
+                    </div>
+                  </td>
+                  <td class="text-nowrap">
+                    <div class="btn-group" role="group">
+                      <a href="{{ url_for('job_notes.edit', note_id=job_note.id) }}" class="btn btn-sm btn-primary"
+                        title="Edit note">
+                        <i class="bi bi-pencil"></i>
+                      </a>
+                      <button type="button" class="btn btn-sm btn-danger delete-note-btn"
+                        data-note-id="{{ job_note.id }}" data-job-id="{{ job.id }}" title="Delete note">
+                        <i class="bi bi-trash"></i>
+                      </button>
                     </div>
                   </td>
                 </tr>

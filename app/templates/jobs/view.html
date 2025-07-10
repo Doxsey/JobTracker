@@ -83,7 +83,7 @@
                   </div>
                 </div>
 
-                <!-- Hidden form field - don't use value attribute for long content -->
+                <!-- Hidden form field -->
                 <textarea id="description" name="description" style="display: none;">{{ job.description }}</textarea>
               </div>
             </div>
@@ -213,8 +213,11 @@
       {% if job.notes %}
       <div class="container my-3">
         <div class="row">
-          <div class="col">
+          <div class="col d-flex justify-content-between align-items-center">
             <h4>Job Notes</h4>
+            <a href="{{ url_for('job_notes.create', job_id=job.id) }}" class="btn btn-success btn-sm">
+              <i class="bi bi-plus-circle me-1"></i>Add Note
+            </a>
           </div>
         </div>
 
@@ -224,6 +227,7 @@
               <tr>
                 <th scope="col" class="text-nowrap" style="width: 1%;">Date</th>
                 <th scope="col">Note</th>
+                <th scope="col" class="text-nowrap" style="width: 1%;">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -235,10 +239,37 @@
                     {{ job_note.content | safe }}
                   </div>
                 </td>
+                <td class="text-nowrap">
+                  <div class="btn-group" role="group">
+                    <a href="{{ url_for('job_notes.edit', note_id=job_note.id) }}" class="btn btn-sm btn-primary"
+                      title="Edit note">
+                      <i class="bi bi-pencil"></i>
+                    </a>
+                    <a href="{{ url_for('job_notes.delete', note_id=job_note.id) }}" class="btn btn-sm btn-danger"
+                      title="Delete note">
+                      <i class="bi bi-trash"></i>
+                    </a>
+                  </div>
+                </td>
               </tr>
               {% endfor %}
             </tbody>
           </table>
+        </div>
+      </div>
+      {% else %}
+      <div class="container my-3">
+        <div class="row">
+          <div class="col">
+            <div class="alert alert-info" role="alert">
+              <h5 class="alert-heading">No notes yet</h5>
+              <p>You haven't added any notes for this job application.</p>
+              <hr>
+              <a href="{{ url_for('job_notes.create', job_id=job.id) }}" class="btn btn-success btn-sm">
+                <i class="bi bi-plus-circle me-1"></i>Add Your First Note
+              </a>
+            </div>
+          </div>
         </div>
       </div>
       {% endif %}
