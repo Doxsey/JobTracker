@@ -34,7 +34,7 @@ class JobView {
 
     // Force hide the ENTIRE Quill editor structure after initialization
     const editorContainer = document.getElementById("editor");
-    const toolbar = editorContainer.previousElementSibling; // The toolbar is created as previous sibling
+    const toolbar = editorContainer.previousElementSibling;
 
     // Hide both the toolbar and editor
     if (toolbar && toolbar.classList.contains("ql-toolbar")) {
@@ -42,13 +42,13 @@ class JobView {
     }
     editorContainer.style.display = "none";
 
-    // Sync editor content with hidden form field
+    // Sync editor content with hidden form field (Quill 2.0 method)
     this.quill.on("text-change", () => {
       document.getElementById("description").value =
         this.quill.getSemanticHTML();
     });
 
-    // Load initial content into editor
+    // Load initial content into editor (Quill 2.0 method)
     const existingContent = document.getElementById("description").value;
     if (existingContent) {
       this.quill.setContents(
@@ -154,65 +154,58 @@ class JobView {
       this.descriptionDisplay.style.display = "none";
     }
 
-    // Show the editor
-    if (this.editorContainer) {
-      this.editorContainer.style.display = "block";
+    // Show BOTH the toolbar and editor
+    const editorContainer = document.getElementById("editor");
+    const toolbar = editorContainer.previousElementSibling;
+
+    if (toolbar && toolbar.classList.contains("ql-toolbar")) {
+      toolbar.style.display = "block";
     }
+    editorContainer.style.display = "block";
 
-    // Debug: Check what content we're working with
-    const hiddenFieldContent = document.getElementById("description").value;
-    const displayContent = this.descriptionDisplay.innerHTML;
-
-    console.log("Hidden field content length:", hiddenFieldContent.length);
-    console.log("Display content length:", displayContent.length);
-    console.log("Hidden field content:", hiddenFieldContent);
-    console.log("Display content:", displayContent);
-
-    // Get the complete content from the display element
+    // Get the complete content from the quill-content div
     if (this.quill && this.descriptionDisplay) {
-      // Get content from the nested quill-content div if it exists
       const quillContentDiv =
         this.descriptionDisplay.querySelector(".quill-content");
-      let completeContent;
 
       if (quillContentDiv) {
-        completeContent = quillContentDiv.innerHTML;
+        const completeContent = quillContentDiv.innerHTML.trim();
+
+        // Set content in Quill editor using Quill 2.0 method
+        try {
+          this.quill.setContents(
+            this.quill.clipboard.convert({ html: completeContent })
+          );
+
+          // Update the hidden field with the complete content
+          document.getElementById("description").value =
+            this.quill.getSemanticHTML();
+        } catch (error) {
+          console.error("Error setting Quill content:", error);
+          // Fallback: try setting HTML directly
+          this.quill.root.innerHTML = completeContent;
+          document.getElementById("description").value = completeContent;
+        }
       } else {
-        // Fallback to the card body content
-        const cardBody = this.descriptionDisplay.querySelector(
-          ".card-body .quill-content"
-        );
-        completeContent = cardBody
-          ? cardBody.innerHTML
-          : this.descriptionDisplay.innerHTML;
+        console.error("Could not find .quill-content div");
       }
-
-      // Clean up any extra whitespace but preserve the HTML structure
-      completeContent = completeContent.trim();
-
-      console.log(
-        "Setting editor content:",
-        completeContent.substring(0, 100) + "...",
-        "Total length:",
-        completeContent.length
-      );
-
-      // Set content in Quill editor
-      this.quill.root.innerHTML = completeContent;
-
-      // Update the hidden field with the complete content
-      document.getElementById("description").value = completeContent;
     }
   }
 
   hideRichTextEditor() {
+    // Update the display div with current editor content first
+    if (this.quill && this.descriptionDisplay) {
+      const quillContentDiv =
+        this.descriptionDisplay.querySelector(".quill-content");
+      if (quillContentDiv) {
+        // Use Quill 2.0 method to get clean HTML
+        quillContentDiv.innerHTML = this.quill.getSemanticHTML();
+      }
+    }
+
     // Show the display div
     if (this.descriptionDisplay) {
       this.descriptionDisplay.style.display = "block";
-      // Update display with current editor content
-      if (this.quill) {
-        this.descriptionDisplay.innerHTML = this.quill.root.innerHTML;
-      }
     }
 
     // Hide BOTH the toolbar and editor

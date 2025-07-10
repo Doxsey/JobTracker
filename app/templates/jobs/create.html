@@ -172,7 +172,6 @@ Tracker{% endblock %} {% block content %}
 
 <script>
   document.addEventListener('DOMContentLoaded', function () {
-    // Initialize Quill editor
     var quill = new Quill('#editor', {
       theme: 'snow',
       modules: {
@@ -188,15 +187,14 @@ Tracker{% endblock %} {% block content %}
       placeholder: 'Enter detailed job description...'
     });
 
-    // Sync editor content with hidden form field
     quill.on('text-change', function () {
-      document.getElementById('description').value = quill.root.innerHTML;
+      document.getElementById('description').value = quill.getSemanticHTML();
     });
 
     // Initialize the hidden field with any existing content
     var existingContent = document.getElementById('description').value;
     if (existingContent) {
-      quill.root.innerHTML = existingContent;
+      quill.setContents(quill.clipboard.convert({ html: existingContent }));
     }
   });
 </script>
