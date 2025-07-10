@@ -170,31 +170,39 @@ Tracker{% endblock %} {% block content %}
   });
 </script>
 
+{#
+<script src="{{ url_for('static', filename='js/components/QuillEditor.js') }}"></script> #}
 <script>
   document.addEventListener('DOMContentLoaded', function () {
-    var quill = new Quill('#editor', {
-      theme: 'snow',
-      modules: {
-        toolbar: [
-          ['bold', 'italic', 'underline'],
-          ['blockquote', 'code-block'],
-          [{ 'header': [1, 2, 3, false] }],
-          [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-          ['link'],
-          ['clean']
-        ]
+    // Initialize rich text editor for job creation
+    const descriptionEditor = new QuillEditor({
+      editorId: 'editor',
+      hiddenFieldId: 'description',
+      placeholder: 'Enter detailed job description...',
+      height: '200px',
+      validation: {
+        required: true,
+        minLength: 10
       },
-      placeholder: 'Enter detailed job description...'
+      onChange: (content, editor) => {
+        console.log('Description changed:', content.length, 'characters');
+      }
     });
 
-    quill.on('text-change', function () {
-      document.getElementById('description').value = quill.getSemanticHTML();
-    });
+    // Setup form validation
+    const form = document.getElementById('job-form');
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        const validation = descriptionEditor.validate({
+          required: true,
+          minLength: 10
+        });
 
-    // Initialize the hidden field with any existing content
-    var existingContent = document.getElementById('description').value;
-    if (existingContent) {
-      quill.setContents(quill.clipboard.convert({ html: existingContent }));
+        if (!validation.isValid) {
+          e.preventDefault();
+          alert('Description errors: ' + validation.errors.join(', '));
+        }
+      });
     }
   });
 </script>
