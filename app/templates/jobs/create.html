@@ -38,8 +38,9 @@ Tracker{% endblock %} {% block content %}
         <div class="row mt-3">
           <div class="col">
             <div class="mb-3">
-              <!-- prettier-ignore -->
-              {{ form.description(rows=3, class="form-control", placeholder="Job Description") }}
+              <label for="description" class="form-label">Job Description</label>
+              <div id="editor" style="height: 200px;"></div>
+              {{ form.description(style="display: none;", id="description") }}
             </div>
           </div>
         </div>
@@ -168,4 +169,36 @@ Tracker{% endblock %} {% block content %}
     }
   });
 </script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Initialize Quill editor
+    var quill = new Quill('#editor', {
+      theme: 'snow',
+      modules: {
+        toolbar: [
+          ['bold', 'italic', 'underline'],
+          ['blockquote', 'code-block'],
+          [{ 'header': [1, 2, 3, false] }],
+          [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+          ['link'],
+          ['clean']
+        ]
+      },
+      placeholder: 'Enter detailed job description...'
+    });
+
+    // Sync editor content with hidden form field
+    quill.on('text-change', function () {
+      document.getElementById('description').value = quill.root.innerHTML;
+    });
+
+    // Initialize the hidden field with any existing content
+    var existingContent = document.getElementById('description').value;
+    if (existingContent) {
+      quill.root.innerHTML = existingContent;
+    }
+  });
+</script>
+
 {% endblock %}

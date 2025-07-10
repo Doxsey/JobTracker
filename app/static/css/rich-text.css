@@ -1,0 +1,297 @@
+/* Rich Text Editor and Display Styles */
+
+/* ============================================
+   Rich Text Display Styling
+   ============================================ */
+.rich-text-display {
+    background-color: #343a40;
+    border: 1px solid #6c757d;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    min-height: 100px;
+    max-height: 300px;
+    color: #fff;
+    line-height: 1.6;
+    text-align: left;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.rich-text-display h1, 
+.rich-text-display h2, 
+.rich-text-display h3,
+.rich-text-display h4,
+.rich-text-display h5,
+.rich-text-display h6 {
+    color: #fff;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.rich-text-display h1 {
+    font-size: 1.75rem;
+}
+
+.rich-text-display h2 {
+    font-size: 1.5rem;
+}
+
+.rich-text-display h3 {
+    font-size: 1.25rem;
+}
+
+.rich-text-display ul, 
+.rich-text-display ol {
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.rich-text-display li {
+    margin-bottom: 0.25rem;
+}
+
+.rich-text-display blockquote {
+    border-left: 4px solid #0d6efd;
+    padding-left: 1rem;
+    margin: 1rem 0;
+    font-style: italic;
+    background-color: rgba(13, 110, 253, 0.1);
+    border-radius: 0 0.375rem 0.375rem 0;
+}
+
+.rich-text-display code {
+    background-color: #6c757d;
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.25rem;
+    font-size: 0.875em;
+    color: #fff;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.rich-text-display pre {
+    background-color: #343a40;
+    padding: 1rem;
+    border-radius: 0.375rem;
+    overflow-x: auto;
+    border: 1px solid #343a40;
+}
+
+.rich-text-display pre code {
+    background-color: transparent;
+    padding: 0;
+    border-radius: 0;
+    font-size: inherit;
+}
+
+.rich-text-display a {
+    color: #0d6efd;
+    text-decoration: none;
+}
+
+.rich-text-display a:hover {
+    color: #0a58ca;
+    text-decoration: underline;
+}
+
+.rich-text-display p {
+    margin-bottom: 1rem;
+}
+
+.rich-text-display p:last-child {
+    margin-bottom: 0;
+}
+
+.rich-text-display strong {
+    font-weight: 600;
+}
+
+.rich-text-display em {
+    font-style: italic;
+}
+
+/* ============================================
+   Quill Editor Dark Theme Customization
+   ============================================ */
+
+/* Main editor container */
+.ql-snow {
+    background-color: #343a40;
+    border-color: #6c757d;
+    color: #fff;
+}
+
+/* Toolbar styling */
+.ql-snow .ql-toolbar {
+    background-color: #343a40;
+    border-color: #343a40;
+    padding: 8px;
+}
+
+/* Toolbar button icons */
+.ql-snow .ql-stroke {
+    stroke: #fff;
+}
+
+.ql-snow .ql-fill {
+    fill: #fff;
+}
+
+/* Toolbar button states */
+.ql-snow .ql-toolbar button:hover {
+    background-color: #343a40;
+}
+
+.ql-snow .ql-toolbar button.ql-active {
+    background-color: #0d6efd;
+}
+
+/* Dropdown pickers */
+.ql-snow .ql-picker {
+    color: #fff;
+}
+
+.ql-snow .ql-picker-options {
+    background-color: #343a40;
+    border-color: #6c757d;
+}
+
+.ql-snow .ql-picker-item:hover {
+    background-color: #6c757d;
+}
+
+.ql-snow .ql-picker-item.ql-selected {
+    background-color: #0d6efd;
+    color: #fff;
+}
+
+/* Editor content area */
+.ql-snow .ql-editor {
+    color: #fff;
+    background-color: #343a40;
+    min-height: 120px;
+    padding: 12px 15px;
+}
+
+/* Placeholder text */
+.ql-snow .ql-editor.ql-blank::before {
+    color: #adb5bd;
+    font-style: italic;
+}
+
+/* Focus state */
+.ql-snow.ql-focused .ql-editor {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* ============================================
+   Rich Text Editor Container Styling
+   ============================================ */
+.rich-text-editor-container {
+    position: relative;
+}
+
+.rich-text-editor-container .form-label {
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+/* Error states */
+.rich-text-editor-container.is-invalid .ql-snow {
+    border-color: #dc3545;
+}
+
+.rich-text-editor-container.is-invalid .ql-snow.ql-focused .ql-editor {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+}
+
+/* Success states */
+.rich-text-editor-container.is-valid .ql-snow {
+    border-color: #198754;
+}
+
+.rich-text-editor-container.is-valid .ql-snow.ql-focused .ql-editor {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+}
+
+/* ============================================
+   Rich Text Textarea (View Mode)
+   ============================================ */
+.rich-text-textarea {
+    background-color: #343a40 !important;
+    border-color: #6c757d !important;
+    color: #fff !important;
+    font-family: inherit;
+    line-height: 1.6;
+    min-height: 120px;
+}
+
+.rich-text-textarea:focus {
+    background-color: #343a40 !important;
+    border-color: #86b7fe !important;
+    color: #fff !important;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+}
+
+.rich-text-textarea[readonly] {
+    background-color: #343a40 !important;
+    opacity: 1;
+    cursor: default;
+}
+
+.rich-text-textarea[readonly]:focus {
+    box-shadow: none !important;
+    border-color: #6c757d !important;
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+@media (max-width: 768px) {
+    .rich-text-display {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+    
+    .ql-snow .ql-toolbar {
+        padding: 6px;
+    }
+    
+    .ql-snow .ql-editor {
+        min-height: 100px;
+        padding: 10px;
+    }
+}
+
+/* ============================================
+   Print Styles
+   ============================================ */
+@media print {
+    .rich-text-display {
+        background-color: transparent !important;
+        border: 1px solid #000 !important;
+        color: #000 !important;
+    }
+    
+    .rich-text-display h1,
+    .rich-text-display h2,
+    .rich-text-display h3,
+    .rich-text-display h4,
+    .rich-text-display h5,
+    .rich-text-display h6 {
+        color: #000 !important;
+    }
+    
+    .rich-text-display blockquote {
+        border-left-color: #000 !important;
+        background-color: #f8f9fa !important;
+    }
+    
+    .rich-text-display code {
+        background-color: #f8f9fa !important;
+        color: #000 !important;
+        border: 1px solid #ccc !important;
+    }
+}

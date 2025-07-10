@@ -71,7 +71,17 @@
             <div class="col">
               <div class="mb-3">
                 <label for="description">{{ form.description.label.text }}</label>
-                {{ form.description(rows=3, class="form-control", disabled=true, id="description") }}
+
+                <!-- Rich text editor (hidden by default) -->
+                <div id="editor" style="height: 200px; display: none;"></div>
+
+                <!-- Display mode (shown by default) -->
+                <div id="description-display" class="rich-text-display">
+                  {{ job.description | safe }}
+                </div>
+
+                <!-- Hidden form field for the actual data -->
+                {{ form.description(style="display: none;", id="description", value=job.description) }}
               </div>
             </div>
           </div>
@@ -288,18 +298,20 @@
 
     {{ job_activity_modal() }}
 
-    <script src="{{ url_for('static', filename='js/view-job.js') }}"></script>
-    <script>
-      const jobViewData = {
-        job_id: {{ job.id }},
-      resume_file: "{{ job.resume_file }}",
-        cover_letter_file: "{{ job.cover_letter_file }}",
-          job_description_file: "{{ job.job_description_file }}",
-            delete_file_url: "{{ url_for('files.delete_file') }}",
-    }
-      new JobView(jobViewData);
-    </script>
-
   </div>
 </div>
+
+<script src="{{ url_for('static', filename='js/view-job.js') }}"></script>
+<script>
+  const jobViewData = {
+    job_id: {{ job.id }},
+  resume_file: "{{ job.resume_file }}",
+    cover_letter_file: "{{ job.cover_letter_file }}",
+      job_description_file: "{{ job.job_description_file }}",
+        delete_file_url: "{{ url_for('files.delete_file') }}",
+  }
+  new JobView(jobViewData);
+</script>
+
+
 {% endblock %}

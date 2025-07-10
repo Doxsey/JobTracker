@@ -315,24 +315,19 @@ def create():
 
 @jobs_bp.route('/<int:job_id>/view', methods=['GET', 'POST'])
 def view(job_id):
-
     form = ViewJobForm()
     job = Job.query.get_or_404(job_id)
 
     if request.method == 'GET':
         form.description.data = job.description
-        print("GET request for job view")
         return render_template('jobs/view.html', job=job, form=form)
 
     if request.method == 'POST':
-        print("POST request for job view")
-
         if form.validate_on_submit():
-            print("Form submitted successfully")
             job.company = form.company.data
             job.company_website = form.company_website.data
             job.title = form.title.data
-            job.description = form.description.data
+            job.description = sanitize_html(form.description.data)  # Sanitize rich text
             job.location = request.form['location']
             job.salary_range_low = request.form['salary_range_low']
             job.salary_range_high = request.form['salary_range_high']

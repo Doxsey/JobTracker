@@ -1,6 +1,7 @@
 class JobView {
   constructor(jobViewData) {
     this.jobViewData = jobViewData;
+    this.quill = null;
     this.init();
   }
 
@@ -10,8 +11,38 @@ class JobView {
       function () {
         this.cacheDomElements();
         this.setupEventListeners();
+        this.initializeQuillEditor();
       }.bind(this)
     );
+  }
+
+  initializeQuillEditor() {
+    // Initialize Quill editor (hidden by default)
+    this.quill = new Quill("#editor", {
+      theme: "snow",
+      modules: {
+        toolbar: [
+          ["bold", "italic", "underline"],
+          ["blockquote", "code-block"],
+          [{ header: [1, 2, 3, false] }],
+          [{ list: "ordered" }, { list: "bullet" }],
+          ["link"],
+          ["clean"],
+        ],
+      },
+      placeholder: "Enter job description...",
+    });
+
+    // Sync editor content with hidden form field
+    this.quill.on("text-change", () => {
+      document.getElementById("description").value = this.quill.root.innerHTML;
+    });
+
+    // Load initial content into editor
+    const existingContent = document.getElementById("description").value;
+    if (existingContent) {
+      this.quill.root.innerHTML = existingContent;
+    }
   }
 
   setupEventListeners() {
@@ -64,17 +95,18 @@ class JobView {
     this.confirmDeleteModal = document.getElementById("deleteModal");
     this.confirmDeleteBtn = document.getElementById("confirm-delete-btn");
     this.form = document.getElementById("job-view-form");
+    this.descriptionDisplay = document.getElementById("description-display");
+    this.editorContainer = document.getElementById("editor");
   }
 
   updateJobData(updates) {
     Object.assign(this.jobViewData, updates);
-    // console.log("Updated job data:", this.jobViewData);
   }
 
   setFormDisabled(disabled) {
     const elements = this.form.querySelectorAll("input, textarea, select");
     elements.forEach((el) => {
-      if (el.name !== "csrf_token") {
+      if (el.name !== "csrf_token" && el.id !== "description") {
         el.disabled = disabled;
       }
     });
@@ -93,12 +125,51 @@ class JobView {
     }
     this.pageHeading.textContent = "Editing Job";
     this.pageHeading.classList.add("text-warning");
+
+    // Switch to rich text editor mode
+    this.showRichTextEditor();
     this.refreshFileCards();
   }
 
   onCancelEdit() {
-    // location.reload(true);
+    // Reload the page to reset all changes
     location.replace(window.location.href);
+  }
+
+  showRichTextEditor() {
+    // Hide the display version
+    if (this.descriptionDisplay) {
+      this.descriptionDisplay.style.display = "none";
+    }
+
+    // Show the editor
+    if (this.editorContainer) {
+      this.editorContainer.style.display = "block";
+    }
+
+    // Ensure Quill content is synced with the current description
+    if (this.quill) {
+      const currentContent = document.getElementById("description").value;
+      if (currentContent !== this.quill.root.innerHTML) {
+        this.quill.root.innerHTML = currentContent;
+      }
+    }
+  }
+
+  hideRichTextEditor() {
+    // Show the display version
+    if (this.descriptionDisplay) {
+      this.descriptionDisplay.style.display = "block";
+      // Update display with current editor content
+      if (this.quill) {
+        this.descriptionDisplay.innerHTML = this.quill.root.innerHTML;
+      }
+    }
+
+    // Hide the editor
+    if (this.editorContainer) {
+      this.editorContainer.style.display = "none";
+    }
   }
 
   onDeleteResume() {
@@ -153,11 +224,6 @@ class JobView {
   }
 
   deleteFile() {
-    // console.log(
-    //   "deleteFile called with:",
-    //   this.file_name,
-    //   this.file_description
-    // );
     if (!this.file_name || !this.file_description) {
       console.error("File name or description is missing.");
       return;
@@ -174,7 +240,6 @@ class JobView {
     })
       .then((response) => response.json())
       .then((data) => {
-        // console.log("Response from deleteFile:", data);
         if (data.success) {
           const fileTypeMap = {
             [this.jobViewData.resume_file]: "resume_file",
@@ -277,8 +342,6 @@ class JobView {
       .then((html) => {
         const container = document.getElementById("edit-files-container");
         container.innerHTML = html;
-
-        // No need to re-setup event listeners - event delegation handles it!
       });
   }
 
