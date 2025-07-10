@@ -1,25 +1,117 @@
-{% from "macros/jobs_macros.html" import job_display_top_of_page %}{% extends
-"base.html" %} {% block title %}Add Job Note{% endblock %} {% block content %}
+{% from "macros/jobs_macros.html" import job_display_top_of_page %}
+{% extends "base.html" %}
+{% block title %}Add Job Note{% endblock %}
+{% block content %}
 
 <div class="row justify-content-center">
   <div class="col-md-8">
-    <form action="" method="post" novalidate>
+    <form action="" method="post" novalidate id="job-note-form">
       {{ form.hidden_tag() }}
 
       <div class="container text-start">
-        {{job_display_top_of_page(job)}}
+        {{ job_display_top_of_page(job) }}
         <br />
+
         <div class="row">
           <div class="col">
-            <!-- prettier-ignore -->
-            {{ form.content(size=32, rows=6,class="form-control", placeholder="Add Note") }}
+            <h5>Add New Note</h5>
+            <br />
           </div>
         </div>
+
+        <div class="row">
+          <div class="col">
+            <label for="content" class="form-label">Note Content</label>
+
+            <!-- Rich text editor for note content -->
+            <div id="note-editor" style="height: 150px;"></div>
+
+            <!-- Hidden form field -->
+            {{ form.content(style="display: none;", id="content") }}
+          </div>
+        </div>
+
         <br />
-        <div class="mb-3">{{ form.submit(class="btn btn-success") }}</div>
+
+        <div class="mb-3">
+          {{ form.submit(class="btn btn-success") }}
+          <a href="{{ url_for('jobs.view', job_id=job.id) }}" class="btn btn-secondary ms-2">Cancel</a>
+        </div>
       </div>
     </form>
   </div>
 </div>
+
+<script src="{{ url_for('static', filename='js/components/QuillEditor.js') }}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Initialize rich text editor for job notes
+    const noteEditor = new QuillEditor({
+      editorId: 'note-editor',
+      hiddenFieldId: 'content',
+      placeholder: 'Enter your note about this job...',
+      height: '150px',
+      toolbar: [
+        ['bold', 'italic', 'underline'],
+        ['blockquote'],
+        [{ list: 'ordered' }, { list: 'bullet' }],
+        ['link'],
+        ['clean']
+      ],
+      validation: {
+        required: true,
+        minLength: 5
+      },
+      onChange: (content, editor) => {
+        console.log('Note content changed:', content.length, 'characters');
+      },
+      onReady: (editor) => {
+        console.log('Note editor ready');
+        editor.focus(); // Auto-focus the editor when ready
+      }
+    });
+
+    // Setup form validation
+    const form = document.getElementById('job-note-form');
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        const validation = noteEditor.validate({
+          required: true,
+          minLength: 5
+        });
+
+        if (!validation.isValid) {
+          e.preventDefault();
+          showValidationAlert(validation.errors);
+          noteEditor.focus();
+        }
+      });
+    }
+
+    // Show validation alert function
+    function showValidationAlert(errors) {
+      const alertDiv = document.createElement("div");
+      alertDiv.className = "alert alert-danger alert-dismissible fade show mt-3";
+      alertDiv.role = "alert";
+      alertDiv.innerHTML = `
+            <strong>Please fix the following errors:</strong>
+            <ul class="mb-0 mt-2">
+                ${errors.map(error => `<li>${error}</li>`).join('')}
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+
+      // Insert after the form
+      form.insertAdjacentElement('afterend', alertDiv);
+
+      // Auto-remove after 5 seconds
+      setTimeout(() => {
+        if (alertDiv.parentNode) {
+          alertDiv.remove();
+        }
+      }, 5000);
+    }
+  });
+</script>
 
 {% endblock %}

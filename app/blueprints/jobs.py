@@ -8,6 +8,7 @@ from wtforms.validators import DataRequired
 from werkzeug.utils import secure_filename
 from app.models import Job, Settings
 from ..services.api_service import APIService
+from app.utils.html_utils import sanitize_html
 import os, uuid, json
 import requests
 
@@ -189,16 +190,12 @@ def create():
                 return jsonify({'error': 'Error creating job'}), 500
         
         else:
-            print("Handling form submission")
-            # Handle form submission (existing logic)
-
             form = NewJobForm()
             if form.validate_on_submit():
-                print("Form submitted successfully")
                 company = form.company.data
                 company_website = form.company_website.data
                 title = form.title.data
-                description = form.description.data
+                description = sanitize_html(form.description.data)
                 location = form.location.data
                 salary_range_low = form.salary_range_low.data
                 salary_range_high = form.salary_range_high.data
@@ -318,24 +315,19 @@ def create():
 
 @jobs_bp.route('/<int:job_id>/view', methods=['GET', 'POST'])
 def view(job_id):
-
     form = ViewJobForm()
-    job = Job.query.get_or_404(job_id)
+    job: Job = Job.query.get_or_404(job_id)
 
     if request.method == 'GET':
         form.description.data = job.description
-        print("GET request for job view")
         return render_template('jobs/view.html', job=job, form=form)
 
     if request.method == 'POST':
-        print("POST request for job view")
-
         if form.validate_on_submit():
-            print("Form submitted successfully")
             job.company = form.company.data
             job.company_website = form.company_website.data
             job.title = form.title.data
-            job.description = form.description.data
+            job.description = sanitize_html(form.description.data)
             job.location = request.form['location']
             job.salary_range_low = request.form['salary_range_low']
             job.salary_range_high = request.form['salary_range_high']

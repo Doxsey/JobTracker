@@ -1,6 +1,7 @@
 class JobView {
   constructor(jobViewData) {
     this.jobViewData = jobViewData;
+    this.quillEditor = null;
     this.init();
   }
 
@@ -10,8 +11,37 @@ class JobView {
       function () {
         this.cacheDomElements();
         this.setupEventListeners();
+        this.initializeQuillEditor();
       }.bind(this)
     );
+  }
+
+  initializeQuillEditor() {
+    // Initialize using the reusable QuillEditor class
+    this.quillEditor = new QuillEditor({
+      editorId: "editor",
+      hiddenFieldId: "description",
+      displayElementId: "description-display",
+      placeholder: "Enter job description...",
+      height: "200px",
+      initialContent: document.getElementById("description")?.value || "",
+      autoSync: true,
+      onChange: (content, editor) => {},
+      onReady: (editor) => {
+        // Load content from display element
+        editor.loadContentFromDisplay();
+      },
+    });
+
+    // Force hide the ENTIRE Quill editor structure after initialization
+    const editorContainer = document.getElementById("editor");
+    const toolbar = editorContainer.previousElementSibling;
+
+    // Hide both the toolbar and editor
+    if (toolbar && toolbar.classList.contains("ql-toolbar")) {
+      toolbar.style.display = "none";
+    }
+    editorContainer.style.display = "none";
   }
 
   setupEventListeners() {
@@ -64,17 +94,18 @@ class JobView {
     this.confirmDeleteModal = document.getElementById("deleteModal");
     this.confirmDeleteBtn = document.getElementById("confirm-delete-btn");
     this.form = document.getElementById("job-view-form");
+    this.descriptionDisplay = document.getElementById("description-display");
+    this.editorContainer = document.getElementById("editor");
   }
 
   updateJobData(updates) {
     Object.assign(this.jobViewData, updates);
-    // console.log("Updated job data:", this.jobViewData);
   }
 
   setFormDisabled(disabled) {
     const elements = this.form.querySelectorAll("input, textarea, select");
     elements.forEach((el) => {
-      if (el.name !== "csrf_token") {
+      if (el.name !== "csrf_token" && el.id !== "description") {
         el.disabled = disabled;
       }
     });
@@ -93,13 +124,22 @@ class JobView {
     }
     this.pageHeading.textContent = "Editing Job";
     this.pageHeading.classList.add("text-warning");
+
+    // Switch to rich text editor mode using the QuillEditor class
+    if (this.quillEditor) {
+      this.quillEditor.loadContentFromDisplay();
+      this.quillEditor.show();
+    }
+
     this.refreshFileCards();
   }
 
   onCancelEdit() {
-    // location.reload(true);
+    // Reload the page to reset all changes
     location.replace(window.location.href);
   }
+
+  // ... rest of your existing methods remain the same ...
 
   onDeleteResume() {
     this.onDeleteFile(this.jobViewData.resume_file, "resume");
@@ -125,7 +165,6 @@ class JobView {
     this.uploadFile("job_description_file");
   }
 
-  // Updated replace button handlers (same functionality, but with replace flag)
   onReplaceResume() {
     this.uploadFile("resume_file", true);
   }
@@ -153,11 +192,6 @@ class JobView {
   }
 
   deleteFile() {
-    // console.log(
-    //   "deleteFile called with:",
-    //   this.file_name,
-    //   this.file_description
-    // );
     if (!this.file_name || !this.file_description) {
       console.error("File name or description is missing.");
       return;
@@ -174,7 +208,6 @@ class JobView {
     })
       .then((response) => response.json())
       .then((data) => {
-        // console.log("Response from deleteFile:", data);
         if (data.success) {
           const fileTypeMap = {
             [this.jobViewData.resume_file]: "resume_file",
@@ -213,7 +246,6 @@ class JobView {
         return;
       }
 
-      // Show loading state (optional)
       this.showLoadingState(fileType, true);
 
       try {
@@ -224,7 +256,6 @@ class JobView {
         );
 
         if (result.success) {
-          // Refresh file cards to show the new file
           this.refreshFileCards();
           this.showFileAlert(
             "Success!",
@@ -242,7 +273,6 @@ class JobView {
       }
     });
 
-    // Trigger the file picker
     fileInput.click();
   }
 
@@ -277,12 +307,9 @@ class JobView {
       .then((html) => {
         const container = document.getElementById("edit-files-container");
         container.innerHTML = html;
-
-        // No need to re-setup event listeners - event delegation handles it!
       });
   }
 
-  // Show loading state
   showLoadingState(fileType, isLoading) {
     const buttonId = isLoading
       ? `upload-${fileType.replace("_file", "")}-btn`
@@ -295,14 +322,12 @@ class JobView {
         button.textContent = "Uploading...";
       } else {
         button.disabled = false;
-        // Reset button text based on whether file exists
         const hasFile = this.jobViewData[fileType];
         button.textContent = hasFile ? "Replace" : "Upload";
       }
     }
   }
 
-  // Updated showFileAlert to support success messages
   showFileAlert(boldText, message, type = "danger") {
     const alertDiv = document.createElement("div");
     alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
@@ -316,11 +341,10 @@ class JobView {
       document.getElementById("file-alert-container") || document.body;
     container.prepend(alertDiv);
 
-    // Auto-dismiss success alerts after 3 seconds
     if (type === "success") {
       setTimeout(() => {
         alertDiv.classList.remove("show");
-        setTimeout(() => alertDiv.remove(), 150); // Wait for fade out
+        setTimeout(() => alertDiv.remove(), 150);
       }, 5000);
     }
   }

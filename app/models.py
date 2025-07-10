@@ -14,6 +14,7 @@ class Job(db.Model):
     company_website = db.Column(db.String(200), nullable=True)
     title = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=False)
+    description_format = db.Column(db.String(20), default='html')  # Track format: 'html', 'text', 'markdown'
     location = db.Column(db.String(100), nullable=False)
     referrer = db.Column(db.String(100), nullable=True)
     referrer_posting_id = db.Column(db.String(100), nullable=True)
@@ -40,6 +41,7 @@ class Job(db.Model):
             'company_website': self.company_website,
             'title': self.title,
             'description': self.description,
+            'description_format': self.description_format,
             'location': self.location,
             'referrer': self.referrer,
             'referrer_posting_id': self.referrer_posting_id,
@@ -52,7 +54,9 @@ class Job(db.Model):
             'resume_file': self.resume_file,
             'cover_letter_file': self.cover_letter_file,
             'posting_status': self.posting_status,
-            'posting_url': self.posting_url
+            'posting_url': self.posting_url,
+            'notes': [note.to_dict() for note in self.notes],
+            'activities': [activity.to_dict() for activity in self.activities]
         }
     
 class JobNotes(db.Model):
@@ -61,6 +65,7 @@ class JobNotes(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     job_id = db.Column(db.Integer, db.ForeignKey('jobs.id'), nullable=False)
     content = db.Column(db.Text, nullable=False)
+    content_format = db.Column(db.String(20), default='html')
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(pytz.timezone(current_app.config['LOCAL_TIMEZONE'])))
 
     def __repr__(self):
@@ -71,6 +76,7 @@ class JobNotes(db.Model):
             'id': self.id,
             'job_id': self.job_id,
             'content': self.content,
+            'content_format': self.content_format,
             'created_at': self.created_at
         }
 

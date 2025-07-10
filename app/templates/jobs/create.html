@@ -38,8 +38,9 @@ Tracker{% endblock %} {% block content %}
         <div class="row mt-3">
           <div class="col">
             <div class="mb-3">
-              <!-- prettier-ignore -->
-              {{ form.description(rows=3, class="form-control", placeholder="Job Description") }}
+              <label for="description" class="form-label">Job Description</label>
+              <div id="editor" style="height: 200px;"></div>
+              {{ form.description(style="display: none;", id="description") }}
             </div>
           </div>
         </div>
@@ -168,4 +169,40 @@ Tracker{% endblock %} {% block content %}
     }
   });
 </script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Initialize rich text editor for job creation
+    const descriptionEditor = new QuillEditor({
+      editorId: 'editor',
+      hiddenFieldId: 'description',
+      placeholder: 'Enter detailed job description...',
+      height: '200px',
+      validation: {
+        required: true,
+        minLength: 10
+      },
+      onChange: (content, editor) => {
+        console.log('Description changed:', content.length, 'characters');
+      }
+    });
+
+    // Setup form validation
+    const form = document.getElementById('job-form');
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        const validation = descriptionEditor.validate({
+          required: true,
+          minLength: 10
+        });
+
+        if (!validation.isValid) {
+          e.preventDefault();
+          alert('Description errors: ' + validation.errors.join(', '));
+        }
+      });
+    }
+  });
+</script>
+
 {% endblock %}
