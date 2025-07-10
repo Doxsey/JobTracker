@@ -75,16 +75,20 @@
                 <!-- Rich text editor (hidden by default) -->
                 <div id="editor" style="height: 200px; display: none;"></div>
 
-                <!-- Display mode (shown by default) -->
-                <div id="description-display" class="rich-text-display">
-                  {{ job.description | safe }}
+                <div class="card" id="description-display">
+                  <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                    <div class="quill-content">
+                      {{ job.description | safe }}
+                    </div>
+                  </div>
                 </div>
 
-                <!-- Hidden form field for the actual data -->
-                {{ form.description(style="display: none;", id="description", value=job.description) }}
+                <!-- Hidden form field - don't use value attribute for long content -->
+                <textarea id="description" name="description" style="display: none;">{{ job.description }}</textarea>
               </div>
             </div>
           </div>
+
           <div class="row">
             <div class="col">
               <label for="salary_range_low">{{ form.salary_range_low.label.text }}</label>

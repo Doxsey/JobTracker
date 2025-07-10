@@ -184,6 +184,10 @@
     box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
 
+.quill-content {
+  text-align: left;
+}
+
 /* ============================================
    Rich Text Editor Container Styling
    ============================================ */

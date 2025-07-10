@@ -17,7 +17,6 @@ class JobView {
   }
 
   initializeQuillEditor() {
-    // Initialize Quill editor (hidden by default)
     this.quill = new Quill("#editor", {
       theme: "snow",
       modules: {
@@ -33,15 +32,28 @@ class JobView {
       placeholder: "Enter job description...",
     });
 
+    // Force hide the ENTIRE Quill editor structure after initialization
+    const editorContainer = document.getElementById("editor");
+    const toolbar = editorContainer.previousElementSibling; // The toolbar is created as previous sibling
+
+    // Hide both the toolbar and editor
+    if (toolbar && toolbar.classList.contains("ql-toolbar")) {
+      toolbar.style.display = "none";
+    }
+    editorContainer.style.display = "none";
+
     // Sync editor content with hidden form field
     this.quill.on("text-change", () => {
-      document.getElementById("description").value = this.quill.root.innerHTML;
+      document.getElementById("description").value =
+        this.quill.getSemanticHTML();
     });
 
     // Load initial content into editor
     const existingContent = document.getElementById("description").value;
     if (existingContent) {
-      this.quill.root.innerHTML = existingContent;
+      this.quill.setContents(
+        this.quill.clipboard.convert({ html: existingContent })
+      );
     }
   }
 
@@ -137,7 +149,7 @@ class JobView {
   }
 
   showRichTextEditor() {
-    // Hide the display version
+    // Hide the display div
     if (this.descriptionDisplay) {
       this.descriptionDisplay.style.display = "none";
     }
@@ -147,17 +159,54 @@ class JobView {
       this.editorContainer.style.display = "block";
     }
 
-    // Ensure Quill content is synced with the current description
-    if (this.quill) {
-      const currentContent = document.getElementById("description").value;
-      if (currentContent !== this.quill.root.innerHTML) {
-        this.quill.root.innerHTML = currentContent;
+    // Debug: Check what content we're working with
+    const hiddenFieldContent = document.getElementById("description").value;
+    const displayContent = this.descriptionDisplay.innerHTML;
+
+    console.log("Hidden field content length:", hiddenFieldContent.length);
+    console.log("Display content length:", displayContent.length);
+    console.log("Hidden field content:", hiddenFieldContent);
+    console.log("Display content:", displayContent);
+
+    // Get the complete content from the display element
+    if (this.quill && this.descriptionDisplay) {
+      // Get content from the nested quill-content div if it exists
+      const quillContentDiv =
+        this.descriptionDisplay.querySelector(".quill-content");
+      let completeContent;
+
+      if (quillContentDiv) {
+        completeContent = quillContentDiv.innerHTML;
+      } else {
+        // Fallback to the card body content
+        const cardBody = this.descriptionDisplay.querySelector(
+          ".card-body .quill-content"
+        );
+        completeContent = cardBody
+          ? cardBody.innerHTML
+          : this.descriptionDisplay.innerHTML;
       }
+
+      // Clean up any extra whitespace but preserve the HTML structure
+      completeContent = completeContent.trim();
+
+      console.log(
+        "Setting editor content:",
+        completeContent.substring(0, 100) + "...",
+        "Total length:",
+        completeContent.length
+      );
+
+      // Set content in Quill editor
+      this.quill.root.innerHTML = completeContent;
+
+      // Update the hidden field with the complete content
+      document.getElementById("description").value = completeContent;
     }
   }
 
   hideRichTextEditor() {
-    // Show the display version
+    // Show the display div
     if (this.descriptionDisplay) {
       this.descriptionDisplay.style.display = "block";
       // Update display with current editor content
@@ -166,10 +215,14 @@ class JobView {
       }
     }
 
-    // Hide the editor
-    if (this.editorContainer) {
-      this.editorContainer.style.display = "none";
+    // Hide BOTH the toolbar and editor
+    const editorContainer = document.getElementById("editor");
+    const toolbar = editorContainer.previousElementSibling;
+
+    if (toolbar && toolbar.classList.contains("ql-toolbar")) {
+      toolbar.style.display = "none";
     }
+    editorContainer.style.display = "none";
   }
 
   onDeleteResume() {
