@@ -48,11 +48,6 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Initialize rich text editor for job notes
-        console.log('content.value:', document.getElementById('content').value);
-
-        //const initialContent = document.getElementById('content').value || '';
-
         const noteEditor = new QuillEditor({
             editorId: 'note-editor',
             hiddenFieldId: 'content',
@@ -60,7 +55,6 @@
             height: '200px',
 
             initialContent: document.getElementById('content').value || '',
-            //initialContent: 'fake content',
             validation: {
                 required: true,
                 minLength: 5
@@ -69,7 +63,6 @@
                 console.log('Note content changed:', content.length, 'characters');
             },
             onReady: (editor) => {
-                console.log('Initial content:', editor.getText());
                 editor.focus(); // Auto-focus the editor when ready
             }
         });

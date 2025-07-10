@@ -235,7 +235,7 @@
               <tr>
                 <td class="text-nowrap">{{ job_note.created_at.strftime('%m-%d-%Y') }}</td>
                 <td>
-                  <div class="rich-text-display">
+                  <div class="rich-text-display" style="word-break: break-word; white-space: pre-line;">
                     {{ job_note.content | safe }}
                   </div>
                 </td>
@@ -261,15 +261,16 @@
       <div class="container my-3">
         <div class="row">
           <div class="col">
-            <div class="alert alert-info" role="alert">
-              <h5 class="alert-heading">No notes yet</h5>
-              <p>You haven't added any notes for this job application.</p>
-              <hr>
-              <a href="{{ url_for('job_notes.create', job_id=job.id) }}" class="btn btn-success btn-sm">
-                <i class="bi bi-plus-circle me-1"></i>Add Your First Note
-              </a>
-            </div>
+            <h4>Job Notes</h4>
           </div>
+        </div>
+        <div class="row">
+          <div class="col">
+            <a href="{{ url_for('job_notes.create', job_id=job.id) }}" class="btn btn-success btn-sm">
+              <i class="bi bi-plus-circle me-1"></i>Add Note
+            </a>
+          </div>
+
         </div>
       </div>
       {% endif %}
