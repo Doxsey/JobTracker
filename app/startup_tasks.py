@@ -56,7 +56,9 @@ def create_job_activities(db, app):
             "Job Posting Closed",
             "Company Researched",
             "Networking Contact Made",
-            "Notes Added",
+            "Note Added",
+            "Note Updated",
+            "Note Deleted",
             "Reminder Set"
         ]
 

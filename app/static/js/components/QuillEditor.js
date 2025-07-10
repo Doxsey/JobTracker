@@ -68,9 +68,18 @@ class QuillEditor {
       this.isVisible = true;
     }
 
-    // Set initial content
+    this.isInitialized = true;
+
+    // Set initial content AFTER Quill is fully initialized
     if (this.options.initialContent) {
-      this.setContent(this.options.initialContent);
+      // Use setTimeout to ensure Quill is fully ready
+      setTimeout(() => {
+        console.log(
+          "Setting initial content after timeout:",
+          this.options.initialContent.substring(0, 100) + "..."
+        );
+        this.setContent(this.options.initialContent);
+      }, 50);
     }
 
     // Setup auto-sync if enabled
@@ -81,12 +90,15 @@ class QuillEditor {
     // Setup event listeners
     this.setupEventListeners();
 
-    this.isInitialized = true;
-
     // Call ready callback
     if (this.options.onReady) {
-      this.options.onReady(this);
+      // Call onReady after a small delay to ensure content is set
+      setTimeout(() => {
+        this.options.onReady(this);
+      }, 100);
     }
+
+    console.log(`QuillEditor initialized: #${this.options.editorId}`);
   }
 
   setupAutoSync() {
@@ -123,18 +135,27 @@ class QuillEditor {
       return;
     }
 
+    console.log(
+      "Setting content:",
+      htmlContent ? htmlContent.substring(0, 100) + "..." : "empty"
+    );
+
     try {
-      if (htmlContent) {
-        this.quill.setContents(
-          this.quill.clipboard.convert({ html: htmlContent })
-        );
+      if (htmlContent && htmlContent.trim()) {
+        // Method 1: Try using clipboard.convert (Quill 2.0 preferred method)
+        const delta = this.quill.clipboard.convert({ html: htmlContent });
+        this.quill.setContents(delta);
       } else {
         this.quill.setText("");
       }
     } catch (error) {
-      console.error("Error setting Quill content:", error);
-      // Fallback
-      this.quill.root.innerHTML = htmlContent || "";
+      console.warn("Quill clipboard.convert failed, trying fallback:", error);
+      try {
+        // Method 2: Fallback to direct HTML insertion
+        this.quill.root.innerHTML = htmlContent || "";
+      } catch (fallbackError) {
+        console.error("Both content setting methods failed:", fallbackError);
+      }
     }
 
     // Update hidden field if auto-sync is enabled

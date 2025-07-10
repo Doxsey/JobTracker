@@ -1,0 +1,113 @@
+{% from "macros/jobs_macros.html" import job_display_top_of_page %}
+{% extends "base.html" %}
+{% block title %}Edit Job Note{% endblock %}
+{% block content %}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <form action="" method="post" novalidate id="job-note-form">
+            {{ form.hidden_tag() }}
+
+            <div class="container text-start">
+                {{ job_display_top_of_page(job) }}
+                <br />
+
+                <div class="row">
+                    <div class="col">
+                        <h5>Edit Note</h5>
+                        <br />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col">
+                        <label for="content" class="form-label">Note Content</label>
+
+                        <!-- Rich text editor for note content -->
+                        <div id="note-editor" style="height: 150px;"></div>
+
+                        <!-- Hidden form field -->
+                        {{ form.content(style="display: none;", id="content") }}
+
+                        <small class="text-muted">
+                            Created: {{ note.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                        </small>
+                    </div>
+                </div>
+
+                <br />
+
+                <div class="mb-3">
+                    {{ form.submit(class="btn btn-success") }}
+                    <a href="{{ url_for('jobs.view', job_id=job.id) }}" class="btn btn-secondary ms-2">Cancel</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const noteEditor = new QuillEditor({
+            editorId: 'note-editor',
+            hiddenFieldId: 'content',
+            placeholder: 'Enter your note about this job...',
+            height: '200px',
+
+            initialContent: document.getElementById('content').value || '',
+            validation: {
+                required: true,
+                minLength: 5
+            },
+            onChange: (content, editor) => {
+                console.log('Note content changed:', content.length, 'characters');
+            },
+            onReady: (editor) => {
+                editor.focus(); // Auto-focus the editor when ready
+            }
+        });
+
+        // Setup form validation
+        const form = document.getElementById('job-note-form');
+        if (form) {
+            form.addEventListener('submit', (e) => {
+                const validation = noteEditor.validate({
+                    required: true,
+                    minLength: 5
+                });
+
+                if (!validation.isValid) {
+                    e.preventDefault();
+                    showValidationAlert(validation.errors);
+                    noteEditor.focus();
+                }
+            });
+        }
+
+        // Show validation alert function
+        function showValidationAlert(errors) {
+            const alertDiv = document.createElement("div");
+            alertDiv.className = "alert alert-danger alert-dismissible fade show mt-3";
+            alertDiv.role = "alert";
+            alertDiv.innerHTML = `
+            <strong>Please fix the following errors:</strong>
+            <ul class="mb-0 mt-2">
+                ${errors.map(error => `<li>${error}</li>`).join('')}
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+
+            // Insert after the form
+            form.insertAdjacentElement('afterend', alertDiv);
+
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+    });
+</script>
+
+{% endblock %}
