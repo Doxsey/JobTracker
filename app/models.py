@@ -14,6 +14,7 @@ class Job(db.Model):
     company_website = db.Column(db.String(200), nullable=True)
     title = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=False)
+    description_format = db.Column(db.String(20), default='html')  # Track format: 'html', 'text', 'markdown'
     location = db.Column(db.String(100), nullable=False)
     referrer = db.Column(db.String(100), nullable=True)
     referrer_posting_id = db.Column(db.String(100), nullable=True)

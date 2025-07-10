@@ -8,6 +8,7 @@ from wtforms.validators import DataRequired
 from werkzeug.utils import secure_filename
 from app.models import Job, Settings
 from ..services.api_service import APIService
+from app.utils.html_utils import sanitize_html
 import os, uuid, json
 import requests
 
@@ -189,16 +190,12 @@ def create():
                 return jsonify({'error': 'Error creating job'}), 500
         
         else:
-            print("Handling form submission")
-            # Handle form submission (existing logic)
-
             form = NewJobForm()
             if form.validate_on_submit():
-                print("Form submitted successfully")
                 company = form.company.data
                 company_website = form.company_website.data
                 title = form.title.data
-                description = form.description.data
+                description = sanitize_html(form.description.data)
                 location = form.location.data
                 salary_range_low = form.salary_range_low.data
                 salary_range_high = form.salary_range_high.data
