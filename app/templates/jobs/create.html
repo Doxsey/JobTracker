@@ -8,58 +8,66 @@
     <h3>Add New Job</h3>
     <br />
 
-    <!-- GitHub Branch Creation Section -->
-    {% if github_configured and not draft_job %}
-    <div class="card mb-4" id="github-branch-creation">
-      <div class="card-body">
-        <h5 class="card-title">
-          <i class="bi bi-github me-2"></i>
-          Quick GitHub Branch Creation
-        </h5>
-        <p class="card-text text-muted">
-          Create a GitHub branch now with just company and title to get started organizing documents.
-        </p>
+    <div class="container" id="top-github-branch-creation-container">
 
-        <div class="row g-3 align-items-end">
-          <div class="col-md-4">
-            <label for="quick-company" class="form-label">Company</label>
-            <input type="text" class="form-control" id="quick-company" placeholder="Company name">
-          </div>
-          <div class="col-md-4">
-            <label for="quick-title" class="form-label">Job Title</label>
-            <input type="text" class="form-control" id="quick-title" placeholder="Job title">
-          </div>
-          <div class="col-md-4">
-            <label for="quick-branch-name" class="form-label">Branch Name (optional)</label>
-            <input type="text" class="form-control" id="quick-branch-name" placeholder="Auto-generated if empty">
-          </div>
-          <div class="col-12">
-            <button type="button" class="btn btn-success" id="create-github-branch-btn">
-              <i class="bi bi-github me-2"></i>Create GitHub Branch
-            </button>
-            <small class="form-text text-muted ms-3">
-              This will create a minimal job entry and GitHub branch. Continue filling the form below to complete the
-              job.
-            </small>
+
+      <!-- GitHub Branch Creation Section -->
+      {% if github_configured and not draft_job %}
+      <div class="card mb-4" id="github-branch-creation">
+        <div class="card-header">
+          <h5 class="card-title">
+            <i class="bi bi-github me-2"></i>
+            Quick GitHub Branch Creation
+          </h5>
+          <p class="card-text text-muted">
+            Create a GitHub branch now with just company and title to get started organizing documents.
+          </p>
+
+          <div class="row g-3 align-items-end">
+            <div class="col-md-6">
+              <label for="quick-company" class="form-label">Company</label>
+              <input type="text" class="form-control" id="quick-company" placeholder="Company name">
+            </div>
+            <div class="col-md-6">
+              <label for="quick-title" class="form-label">Job Title</label>
+              <input type="text" class="form-control" id="quick-title" placeholder="Job title">
+            </div>
+            <div class="col-md-12">
+              <label for="quick-branch-name" class="form-label">Branch Name (optional)</label>
+              <input type="text" class="form-control" id="quick-branch-name" placeholder="Auto-generated if empty">
+            </div>
+            <div class="col-md-12">
+              <button type="button" class="btn btn-success" id="create-github-branch-btn">
+                <i class="bi bi-github me-2"></i>Create GitHub Branch
+              </button>
+            </div>
+            <div class="col-12">
+              <small class="form-text text-muted ms-3">
+                This will create a minimal job entry and GitHub branch. Continue filling the form below to complete the
+                job.
+              </small>
+
+            </div>
           </div>
         </div>
       </div>
-    </div>
-    {% endif %}
+      {% endif %}
 
-    <!-- Branch Created Alert (hidden by default) -->
-    <div class="alert alert-success d-none" id="branch-created-alert">
-      <i class="bi bi-check-circle-fill me-2"></i>
-      <strong>GitHub branch created successfully!</strong>
-      <div class="mt-2">
-        <span>Branch: <code id="created-branch-name"></code></span>
-        <a href="#" target="_blank" id="view-branch-link" class="btn btn-sm btn-outline-success ms-2">
-          <i class="bi bi-box-arrow-up-right me-1"></i>View on GitHub
-        </a>
+      <!-- Branch Created Alert (hidden by default) -->
+      <div class="alert alert-success d-none" id="branch-created-alert">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <strong>GitHub branch created successfully!</strong>
+        <div class="mt-2">
+          <span>Branch: <code id="created-branch-name"></code></span>
+          <a href="#" target="_blank" id="view-branch-link" class="btn btn-sm btn-outline-success ms-2">
+            <i class="bi bi-box-arrow-up-right me-1"></i>View on GitHub
+          </a>
+        </div>
+        <div class="mt-2 text-muted">
+          Continue filling out the form below to complete your job application.
+        </div>
       </div>
-      <div class="mt-2 text-muted">
-        Continue filling out the form below to complete your job application.
-      </div>
+
     </div>
 
     <form action="" method="post" enctype="multipart/form-data" id="job-form">
