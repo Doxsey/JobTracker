@@ -1,18 +1,76 @@
-{% from "macros/jobs_macros.html" import select_file_upload %} {% extends "base.html" %} {% block title %}Create Job -
-Job
-Tracker{% endblock %} {% block content %}
+{% from "macros/jobs_macros.html" import select_file_upload %}
+{% extends "base.html" %}
+{% block title %}Create Job - Job Tracker{% endblock %}
+{% block content %}
+
 <div class="row justify-content-center">
   <div class="col-md-8">
     <h3>Add New Job</h3>
     <br />
 
-    <input type="hidden" name="job_id" id="job_id" value="">
+    <!-- GitHub Branch Creation Section -->
+    {% if github_configured and not draft_job %}
+    <div class="card mb-4" id="github-branch-creation">
+      <div class="card-body">
+        <h5 class="card-title">
+          <i class="bi bi-github me-2"></i>
+          Quick GitHub Branch Creation
+        </h5>
+        <p class="card-text text-muted">
+          Create a GitHub branch now with just company and title to get started organizing documents.
+        </p>
 
-    <form action="" method="post" enctype="multipart/form-data">
+        <div class="row g-3 align-items-end">
+          <div class="col-md-4">
+            <label for="quick-company" class="form-label">Company</label>
+            <input type="text" class="form-control" id="quick-company" placeholder="Company name">
+          </div>
+          <div class="col-md-4">
+            <label for="quick-title" class="form-label">Job Title</label>
+            <input type="text" class="form-control" id="quick-title" placeholder="Job title">
+          </div>
+          <div class="col-md-4">
+            <label for="quick-branch-name" class="form-label">Branch Name (optional)</label>
+            <input type="text" class="form-control" id="quick-branch-name" placeholder="Auto-generated if empty">
+          </div>
+          <div class="col-12">
+            <button type="button" class="btn btn-success" id="create-github-branch-btn">
+              <i class="bi bi-github me-2"></i>Create GitHub Branch
+            </button>
+            <small class="form-text text-muted ms-3">
+              This will create a minimal job entry and GitHub branch. Continue filling the form below to complete the
+              job.
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Branch Created Alert (hidden by default) -->
+    <div class="alert alert-success d-none" id="branch-created-alert">
+      <i class="bi bi-check-circle-fill me-2"></i>
+      <strong>GitHub branch created successfully!</strong>
+      <div class="mt-2">
+        <span>Branch: <code id="created-branch-name"></code></span>
+        <a href="#" target="_blank" id="view-branch-link" class="btn btn-sm btn-outline-success ms-2">
+          <i class="bi bi-box-arrow-up-right me-1"></i>View on GitHub
+        </a>
+      </div>
+      <div class="mt-2 text-muted">
+        Continue filling out the form below to complete your job application.
+      </div>
+    </div>
+
+    <form action="" method="post" enctype="multipart/form-data" id="job-form">
       {{ form.hidden_tag() }}
+
+      <!-- Hidden field for draft job ID -->
+      {% if draft_job %}
+      <input type="hidden" name="draft_job_id" value="{{ draft_job.id }}">
+      {% endif %}
+
       <div class="container text-center">
-        {# {{ form.existing_id(id="existing_id") }} #}
-        {{ form.existing_id(id="existing_id", type="hidden") }}
         <div class="row">
           <div class="col">
             {{ form.company(size=32, class="form-control", placeholder="Company") }}
@@ -30,10 +88,14 @@ Tracker{% endblock %} {% block content %}
             <div class="row">
               <select class="form-select" name="remote_option" id="remote_option" aria-label="Default select example">
                 <option value="">Select Remote Option</option>
-                <option value="Remote">Remote</option>
-                <option value="Hybrid">Hybrid</option>
-                <option value="Onsite">Onsite</option>
-                <option value="Unknown">Unknown</option>
+                <option value="Remote" {% if draft_job and draft_job.remote_option=='Remote' %}selected{% endif %}>
+                  Remote</option>
+                <option value="Hybrid" {% if draft_job and draft_job.remote_option=='Hybrid' %}selected{% endif %}>
+                  Hybrid</option>
+                <option value="Onsite" {% if draft_job and draft_job.remote_option=='Onsite' %}selected{% endif %}>
+                  Onsite</option>
+                <option value="Unknown" {% if draft_job and draft_job.remote_option=='Unknown' %}selected{% endif %}>
+                  Unknown</option>
               </select>
             </div>
           </div>
@@ -100,29 +162,39 @@ Tracker{% endblock %} {% block content %}
             <br />
           </div>
         </div>
-        <div class="row">
-          <div class="form-check d-flex justify-content-start mb-3">
-            {{ form.create_github_branch(class="form-check-input me-3 ms-3", id="create_github_branch_checkbox") }}
-            {{ form.create_github_branch.label(class="form-check-label") }}
+
+        <div id="github-integration-content">
+          {% if draft_job and draft_job.github_branch %}
+          <!-- Show existing branch info for draft jobs -->
+          <div class="alert alert-info" id="existing-branch-info">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            <strong>GitHub branch already created:</strong>
+            <code>{{ draft_job.github_branch }}</code>
+            <a href="https://github.com/{{ config.GITHUB_REPO }}/tree/{{ draft_job.github_branch }}" target="_blank"
+              class="btn btn-sm btn-outline-primary ms-2">
+              <i class="bi bi-box-arrow-up-right me-1"></i>View on GitHub
+            </a>
           </div>
-        </div>
-        <div class="row d-none ms-4" id="github-branch-name-container">
-          <div class="col-auto">
-            {{ form.github_branch_name(size=32, class="form-control", placeholder="Leave empty for auto-generated name")
-            }}
-            <small class="form-text text-muted">
-              Branch name format: job/company-name/job-title-YYYYMMDD-jobID
-            </small>
-            <br />
+          {% else %}
+          <div id="github-branch-controls">
+            <div class="row">
+              <div class="form-check d-flex justify-content-start mb-3">
+                {{ form.create_github_branch(class="form-check-input me-3 ms-3", id="create_github_branch_checkbox") }}
+                {{ form.create_github_branch.label(class="form-check-label") }}
+              </div>
+            </div>
+            <div class="row d-none ms-4" id="github-branch-name-container" style="max-width: 75%;">
+              <div class="col"></div>
+              <!--noformat-->
+              {{ form.github_branch_name(size=32, class="form-control", placeholder="Leave empty for auto-generated name") }}
+              <!--noformat-->
+              <small class="form-text text-muted">
+                Branch name format: job/company-name/job-title-YYYYMMDD-jobID
+              </small>
+              <br />
+            </div>
           </div>
-          <div class="col-auto">
-            <button type="button" class="btn btn-primary" id="generate_branch_button">Generate Branch Now</button>
-            <br />
-            {# TODO: make the button and info into rows instead of cols here #}
-            <small class="form-text text-muted">
-              Otherwise, the branch will be automatically generated when the job is created.
-            </small>
-          </div>
+          {% endif %}
         </div>
         {% endif %}
 
@@ -153,22 +225,27 @@ Tracker{% endblock %} {% block content %}
           </div>
         </div>
 
-        <div class="mb-3">{{ form.submit(class="btn btn-success") }}</div>
+        <div class="mb-3">
+          {{ form.submit(class="btn btn-success", value="Complete Job" if draft_job else "Add Job") }}
+          {% if draft_job %}
+          <a href="{{ url_for('main.index') }}" class="btn btn-secondary ms-2">Cancel</a>
+          {% endif %}
+        </div>
       </div>
     </form>
 
-    {% for field, errors in form.errors.items() %}
-    {% for error in errors %}
+    {% for field, errors in form.errors.items() %} {% for error in errors %}
     <div class="row">
       <div class="alert alert-danger">{{ field }}: {{ error }}</div>
     </div>
-    {% endfor %}
-    {% endfor %}
+    {% endfor %} {% endfor %}
   </div>
 </div>
 
-<script src="{{ url_for('static', filename='js/jobs/create.js') }}"></script>
+<!-- Alert container for GitHub branch creation -->
+<div id="github-alert-container" class="position-fixed top-0 end-0 p-3" style="z-index: 1055;"></div>
 
+<script src="{{ url_for('static', filename='js/github-branch-creation.js') }}"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     const useDefaultResumeCheckbox = document.getElementById('use_default_resume_checkbox');
@@ -239,6 +316,7 @@ Tracker{% endblock %} {% block content %}
       hiddenFieldId: 'description',
       placeholder: 'Enter detailed job description...',
       height: '200px',
+      initialContent: '{{ draft_job.description | safe if draft_job else "" }}',
       validation: {
         required: true,
         minLength: 10
@@ -260,6 +338,26 @@ Tracker{% endblock %} {% block content %}
         if (!validation.isValid) {
           e.preventDefault();
           alert('Description errors: ' + validation.errors.join(', '));
+        }
+      });
+    }
+  });
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('job-form');
+    const submitBtn = form ? form.querySelector('button[type="submit"], input[type="submit"]') : null;
+
+    if (form && submitBtn) {
+      form.addEventListener('submit', function (e) {
+        // Disable the submit button and show "Working..." text
+        submitBtn.disabled = true;
+        // If it's an input element, change value; if button, change textContent
+        if (submitBtn.tagName === 'INPUT') {
+          submitBtn.value = 'Working...';
+        } else {
+          submitBtn.textContent = 'Working...';
         }
       });
     }

@@ -10,8 +10,8 @@ def index():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)
     
-    # Build query based on status filter
-    query = Job.query
+    # Build query based on status filter - exclude draft jobs
+    query = Job.query.filter(Job.is_draft == False)
     
     if status_filter == 'open':
         query = query.filter_by(posting_status="Open")
@@ -46,8 +46,8 @@ def all_jobs():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)
     
-    # Paginate the query
-    jobs_pagination = Job.query.paginate(
+    # Paginate the query - exclude draft jobs
+    jobs_pagination = Job.query.filter(Job.is_draft == False).paginate(
         page=page,
         per_page=per_page,
         error_out=False
