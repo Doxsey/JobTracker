@@ -74,10 +74,10 @@ class QuillEditor {
     if (this.options.initialContent) {
       // Use setTimeout to ensure Quill is fully ready
       setTimeout(() => {
-        console.log(
-          "Setting initial content after timeout:",
-          this.options.initialContent.substring(0, 100) + "..."
-        );
+        // console.log(
+        //   "Setting initial content after timeout:",
+        //   this.options.initialContent.substring(0, 100) + "..."
+        // );
         this.setContent(this.options.initialContent);
       }, 50);
     }
@@ -98,7 +98,7 @@ class QuillEditor {
       }, 100);
     }
 
-    console.log(`QuillEditor initialized: #${this.options.editorId}`);
+    // console.log(`QuillEditor initialized: #${this.options.editorId}`);
   }
 
   setupAutoSync() {
@@ -135,10 +135,10 @@ class QuillEditor {
       return;
     }
 
-    console.log(
-      "Setting content:",
-      htmlContent ? htmlContent.substring(0, 100) + "..." : "empty"
-    );
+    // console.log(
+    //   "Setting content:",
+    //   htmlContent ? htmlContent.substring(0, 100) + "..." : "empty"
+    // );
 
     try {
       if (htmlContent && htmlContent.trim()) {
