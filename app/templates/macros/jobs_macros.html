@@ -16,7 +16,7 @@
 
 {% endmacro %}
 
-{% macro job_row_with_additional_info(job) %}
+{% macro job_row_with_additional_info(job, show_status=false) %}
 {% set has_activities = job.activities|length > 0 %}
 {% set has_notes = job.notes|length > 0 %}
 {% set has_files = job.resume_file or job.job_description_file or job.cover_letter_file %}
@@ -27,13 +27,28 @@
   <td>{{ job.title }}</td>
   <td>{{ job.location }}</td>
   <td>{{ job.remote_option }}</td>
-  <td>${{ "{:,.0f}".format(job.salary_range_low) }} - ${{ "{:,.0f}".format(job.salary_range_high) }}</td>
+  <td>
+    {% if job.salary_range_low and job.salary_range_high %}
+    ${{ "{:,.0f}".format(job.salary_range_low) }} - ${{ "{:,.0f}".format(job.salary_range_high) }}
+    {% else %}
+    -
+    {% endif %}
+  </td>
   <td>{{ job.created_dt.strftime('%m-%d-%Y') }}</td>
+  {% if show_status %}
+  <td>
+    {% if job.posting_status == 'Closed' %}
+    <span class="badge bg-secondary">Closed</span>
+    {% else %}
+    <span class="badge bg-success">Open</span>
+    {% endif %}
+  </td>
+  {% endif %}
   <td>{{action_buttons(job)}}</td>
 </tr>
 
 <tr class="collapse detail-row" id="details-{{ job.id }}">
-  <td colspan="12">
+  <td colspan="{% if show_status %}13{% else %}12{% endif %}">
     <div class="p-3">
       <div class="mb-3">
         {% if has_activities %}
@@ -116,8 +131,7 @@
                 <tr>
                   <td class="text-nowrap">{{ job_note.created_at.strftime('%m-%d-%Y') }}</td>
                   <td>
-                    <div class="rich-text-display"
-                      style="word-break: break-word; white-space: pre-line; max-height: 200px; overflow-y: auto;">
+                    <div class="rich-text-display" style="word-break: break-word; max-height: 200px; overflow-y: auto;">
                       {{ job_note.content | safe }}
                     </div>
                   </td>
@@ -175,19 +189,35 @@
 
 {% endmacro %}
 
-{% macro job_row_without_activities(job) %}
+{% macro job_row_without_activities(job, show_status=false) %}
 <tr>
   <td></td>
   <td>{{ job.company }}</td>
   <td>{{ job.title }}</td>
   <td>{{ job.location }}</td>
   <td>{{ job.remote_option }}</td>
-  <td>${{ job.salary_range_low }} - ${{ job.salary_range_high }}</td>
+  <td>
+    {% if job.salary_range_low and job.salary_range_high %}
+    ${{ "{:,.0f}".format(job.salary_range_low) }} - ${{ "{:,.0f}".format(job.salary_range_high) }}
+    {% else %}
+    -
+    {% endif %}
+  </td>
   <td>{{ job.created_dt.strftime('%m-%d-%Y') }}</td>
+  {% if show_status %}
+  <td>
+    {% if job.posting_status == 'Closed' %}
+    <span class="badge bg-secondary">Closed</span>
+    {% else %}
+    <span class="badge bg-success">Open</span>
+    {% endif %}
+  </td>
+  {% endif %}
   <td>{{action_buttons(job)}}</td>
 </tr>
 
 {% endmacro %}
+
 {% macro action_buttons(job) %}
 <div class="dropdown">
   <button class="btn btn-primary dropdown-toggle btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -203,9 +233,11 @@
     <li>
       <a class="dropdown-item" data-href="{{ url_for('jobs.view', job_id=job.id) }}">View/Edit Job</a>
     </li>
+    {% if job.posting_status == 'Open' %}
     <li>
       <a class="dropdown-item" data-href="{{ url_for('jobs.close', job_id=job.id) }}">Close Job</a>
     </li>
+    {% endif %}
     <li>
       <a class="dropdown-item" data-href="{{ url_for('jobs.delete', job_id=job.id) }}">Delete Job</a>
     </li>
@@ -213,6 +245,7 @@
 </div>
 
 {% endmacro %}
+
 {% macro job_display_top_of_page(job) %}
 <div class="card card-body sub-detail-row">
   <div class="row">
