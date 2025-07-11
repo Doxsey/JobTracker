@@ -26,7 +26,13 @@
         </li>
         <li class="list-group-item">
           <strong>Description:</strong>
-          {{ job.description }}
+          <div class="card mt-3" id="description-display">
+            <div class="card-body" style="word-break: break-word; max-height: 300px; overflow-y: auto;">
+              <div class="quill-content">
+                {{ job.description | safe }}
+              </div>
+            </div>
+          </div>
         </li>
       </ul>
       <br />
