@@ -87,43 +87,70 @@ Tracker{% endblock %} {% block content %}
         {{ select_file_upload(form.job_description_file, "Job Description") }}
 
         <br />
+
+        {% if github_configured %}
         <hr />
-        <br />
-
         <div class="row">
           <div class="col">
-            <h5 class="text-start">Referrer Information</h5>
+            <h5 class="text-start">GitHub Integration</h5>
             <br />
           </div>
         </div>
-
         <div class="row">
-          <div class="col">
-            {{ form.referrer(size=32, class="form-control", placeholder="Referrer") }}
-            <br />
-          </div>
-          <div class="col">
-            {{ form.referrer_posting_id(size=32, class="form-control", placeholder="Referrer Posting ID") }}
+          <div class="form-check d-flex justify-content-start mb-3">
+            {{ form.create_github_branch(class="form-check-input me-3 ms-3", id="create_github_branch_checkbox") }}
+            {{ form.create_github_branch.label(class="form-check-label") }}
           </div>
         </div>
-
-        <div class="row">
-          <div class="col">
-            {{ form.posting_url(size=32, class="form-control", placeholder="Posting URL") }}
-            <br />
-          </div>
+        <div class="row d-none ms-4" id="github-branch-name-container" style="max-width: 75%;">
+          <div class="col"></div>
+          {{ form.github_branch_name(size=32, class="form-control", placeholder="Leave empty for auto-generated name")
+          }}
+          <small class="form-text text-muted">
+            Branch name format: job/company-name/job-title-YYYYMMDD-jobID
+          </small>
+          <br />
         </div>
-
-        <div class="mb-3">{{ form.submit(class="btn btn-success") }}</div>
       </div>
-    </form>
+      {% endif %}
 
-    {% for field, errors in form.errors.items() %} {% for error in errors %}
-    <div class="row">
-      <div class="alert alert-danger">{{ field }}: {{ error }}</div>
-    </div>
-    {% endfor %} {% endfor %}
+      <hr />
+      <br />
+
+      <div class="row">
+        <div class="col">
+          <h5 class="text-start">Referrer Information</h5>
+          <br />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          {{ form.referrer(size=32, class="form-control", placeholder="Referrer") }}
+          <br />
+        </div>
+        <div class="col">
+          {{ form.referrer_posting_id(size=32, class="form-control", placeholder="Referrer Posting ID") }}
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          {{ form.posting_url(size=32, class="form-control", placeholder="Posting URL") }}
+          <br />
+        </div>
+      </div>
+
+      <div class="mb-3">{{ form.submit(class="btn btn-success") }}</div>
   </div>
+  </form>
+
+  {% for field, errors in form.errors.items() %} {% for error in errors %}
+  <div class="row">
+    <div class="alert alert-danger">{{ field }}: {{ error }}</div>
+  </div>
+  {% endfor %} {% endfor %}
+</div>
 </div>
 
 <script>
@@ -166,6 +193,24 @@ Tracker{% endblock %} {% block content %}
     // Listen for checkbox changes
     if (useDefaultResumeCheckbox) {
       useDefaultResumeCheckbox.addEventListener('change', toggleResumeFileInput);
+    }
+
+    // GitHub branch name toggle
+    const createGithubBranchCheckbox = document.getElementById('create_github_branch_checkbox');
+    const githubBranchNameContainer = document.getElementById('github-branch-name-container');
+
+    function toggleGithubBranchInput() {
+      if (createGithubBranchCheckbox && createGithubBranchCheckbox.checked) {
+        githubBranchNameContainer.classList.remove('d-none');
+      } else if (githubBranchNameContainer) {
+        githubBranchNameContainer.classList.add('d-none');
+      }
+    }
+
+    // Initial state check
+    if (createGithubBranchCheckbox) {
+      toggleGithubBranchInput();
+      createGithubBranchCheckbox.addEventListener('change', toggleGithubBranchInput);
     }
   });
 </script>

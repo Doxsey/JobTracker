@@ -24,7 +24,12 @@
 <tr class="clickable-row" data-bs-target="#details-{{ job.id }}" aria-expanded="false">
   <td><i class="expand-icon">▼</i></td>
   <td>{{ job.company }}</td>
-  <td>{{ job.title }}</td>
+  <td>
+    {{ job.title }}
+    {% if has_github %}
+    <i class="bi bi-github ms-1" title="Has GitHub branch"></i>
+    {% endif %}
+  </td>
   <td>{{ job.location }}</td>
   <td>{{ job.remote_option }}</td>
   <td>
@@ -193,7 +198,11 @@
 <tr>
   <td></td>
   <td>{{ job.company }}</td>
-  <td>{{ job.title }}</td>
+  <td>{{ job.title }}
+    {% if has_github %}
+    <i class="bi bi-github ms-1" title="Has GitHub branch"></i>
+    {% endif %}
+  </td>
   <td>{{ job.location }}</td>
   <td>{{ job.remote_option }}</td>
   <td>

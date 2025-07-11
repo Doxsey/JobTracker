@@ -141,6 +141,29 @@
             </div>
           </div>
 
+          {% if job.github_branch %}
+          <div class="row">
+            <div class="col">
+              <h5 class="text-start">GitHub Information</h5>
+              <br />
+            </div>
+          </div>
+          <div class="row">
+            <div class="col">
+              <label for="github_branch">{{ form.github_branch.label.text }}</label>
+              <div class="input-group">
+                {{ form.github_branch(size=32, class="form-control", value=job.github_branch, disabled=true,
+                id="github_branch") }}
+                <a href="https://github.com/{{ config.GITHUB_REPO }}/tree/{{ job.github_branch }}"
+                  class="btn btn-outline-secondary" target="_blank" title="View branch on GitHub">
+                  <i class="bi bi-box-arrow-up-right"></i> View on GitHub
+                </a>
+              </div>
+              <br />
+            </div>
+          </div>
+          {% endif %}
+
           <div class="row">
             <div id="file-alert-container" class="mt-3"></div>
           </div>

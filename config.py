@@ -16,6 +16,11 @@ class Config:
     # File upload settings
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
     
+    # GitHub configuration
+    GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
+    GITHUB_REPO = os.environ.get('GITHUB_REPO')  # Format: "username/repository"
+    GITHUB_BASE_BRANCH = os.environ.get('GITHUB_BASE_BRANCH', 'main')
+    
     @property
     def SQLALCHEMY_DATABASE_URI(self):
         return f'sqlite:///{self.APP_FOLDER}/app.db'

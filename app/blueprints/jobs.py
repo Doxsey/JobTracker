@@ -4,10 +4,11 @@ from app import db
 from flask_wtf import FlaskForm
 from wtforms import DateField, StringField, BooleanField, SubmitField, TextAreaField, DecimalField
 from flask_wtf.file import FileField, FileRequired, FileAllowed
-from wtforms.validators import DataRequired
+from wtforms.validators import DataRequired, Optional
 from werkzeug.utils import secure_filename
 from app.models import Job, Settings
 from ..services.api_service import APIService
+from ..services.github_service import GitHubService
 from app.utils.html_utils import sanitize_html
 import os, uuid, json
 import requests
@@ -40,6 +41,8 @@ class NewJobForm(FlaskForm):
                    'Only PDF and document files allowed!')
     ])
     use_default_resume = BooleanField('Use Default Resume', default=True)
+    create_github_branch = BooleanField('Create GitHub Branch for Custom Documents', default=False)
+    github_branch_name = StringField('GitHub Branch Name (auto-generated if empty)', validators=[Optional()])
     submit = SubmitField('Add Job')
 
 class ViewJobForm(FlaskForm):
@@ -56,6 +59,7 @@ class ViewJobForm(FlaskForm):
     posting_url = StringField('Posting URL')
     company_website = StringField('Company Website')
     created_dt = StringField('Date Created')
+    github_branch = StringField('GitHub Branch', render_kw={'readonly': True})
     submit = SubmitField('Save Changes')
 
 class DeleteJobForm(FlaskForm):
@@ -69,10 +73,12 @@ class CloseJobForm(FlaskForm):
 @jobs_bp.route('/create', methods=['GET', 'POST'])
 def create():
     settings = Settings.query.all()
+    github_configured = bool(current_app.config.get('GITHUB_TOKEN') and current_app.config.get('GITHUB_REPO'))
+    
     if request.method == 'GET':
         # Handle GET request - show the form
         form = NewJobForm()
-        return render_template('jobs/create.html', form=form, settings=settings)
+        return render_template('jobs/create.html', form=form, settings=settings, github_configured=github_configured)
     
     # Handle POST request
     if request.method == 'POST':
@@ -109,6 +115,8 @@ def create():
                 posting_id = data.get('posting_id')
                 referrer = data.get('referrer')
                 referrer_posting_id = data.get('referrer_posting_id')
+                create_github_branch = data.get('create_github_branch', False)
+                github_branch_name = data.get('github_branch_name')
                 
                 # Basic validation for required fields
                 if not all([company, title, description]):
@@ -141,7 +149,7 @@ def create():
                     if isinstance(unique_cover_letter_filename, tuple):  # Error occurred
                         return unique_cover_letter_filename
                 
-                # Create new job
+                # Create new job (temporarily with ID=None for branch creation)
                 job = Job(
                     company=company,
                     company_website=company_website,
@@ -160,7 +168,27 @@ def create():
                     cover_letter_file=unique_cover_letter_filename
                 )
                 
+                # Save to get the ID first
                 db.session.add(job)
+                db.session.flush()  # This assigns the ID without committing
+                
+                # Handle GitHub branch creation
+                if create_github_branch and github_configured:
+                    try:
+                        github_service = GitHubService()
+                        if not github_branch_name:
+                            github_branch_name = github_service.generate_branch_name(company, title, job.id)
+                        
+                        success, message = github_service.create_branch(github_branch_name)
+                        if success:
+                            job.github_branch = github_branch_name
+                        else:
+                            # Log warning but don't fail the job creation
+                            current_app.logger.warning(f"Failed to create GitHub branch: {message}")
+                    except Exception as e:
+                        current_app.logger.error(f"GitHub branch creation error: {str(e)}")
+                
+                # Commit the job
                 db.session.commit()
                 
                 response_data = {
@@ -179,6 +207,10 @@ def create():
 
                 if unique_cover_letter_filename:
                     response_data['cover_letter_file'] = unique_cover_letter_filename
+                
+                if job.github_branch:
+                    response_data['github_branch'] = job.github_branch
+                    response_data['github_branch_url'] = f"https://github.com/{current_app.config.get('GITHUB_REPO')}/tree/{job.github_branch}"
 
                 return jsonify(response_data), 201
                 
@@ -208,6 +240,8 @@ def create():
                 resume_file = form.resume_file.data
                 job_description_file = form.job_description_file.data
                 cover_letter_file = form.cover_letter_file.data
+                create_github_branch = form.create_github_branch.data
+                github_branch_name = form.github_branch_name.data
                 
                 if use_default_resume:
                     resume_file = None
@@ -219,7 +253,7 @@ def create():
 
                         if not os.path.exists(file_path):
                             flash('Default resume file not found!', 'error')
-                            return render_template('jobs/create.html', form=form)
+                            return render_template('jobs/create.html', form=form, settings=settings, github_configured=github_configured)
 
                         unique_resume_filename = generate_unique_filename(default_resume_file)
                         new_file_path = os.path.join(current_app.config['FILE_STORAGE_PATH'], 'Resumes', unique_resume_filename)
@@ -231,6 +265,7 @@ def create():
                                     dest_file.write(src_file.read())
                         except Exception as e:
                             flash(f'Error using default resume file: {str(e)}', 'error')
+                            return render_template('jobs/create.html', form=form, settings=settings, github_configured=github_configured)
 
                 if resume_file and not use_default_resume:
                     original_resume_filename = secure_filename(resume_file.filename)
@@ -242,43 +277,14 @@ def create():
                     try:
                         # Save the file
                         resume_file.save(file_path)
-                        # flash(f'File "{original_resume_filename}" uploaded successfully as "{unique_resume_filename}"!', 'success')
                         
-                    except Exception as e:
-                        flash(f'Error uploading file: {str(e)}', 'error')
-
-                if job_description_file:
-                    original_job_description_filename = secure_filename(job_description_file.filename)
-                    unique_job_description_filename = generate_unique_filename(original_job_description_filename)
-
-                    # Create full file path
-                    file_path = os.path.join(current_app.config['FILE_STORAGE_PATH'], 'Job_Descriptions', unique_job_description_filename)
-
-                    try:
-                        # Save the file
-                        job_description_file.save(file_path)
-                        # flash(f'File "{original_job_description_filename}" uploaded successfully as "{unique_job_description_filename}"!', 'success')
-                    except Exception as e:
-                        flash(f'Error uploading file: {str(e)}', 'error')
-
-                if cover_letter_file:
-                    original_cover_letter_filename = secure_filename(cover_letter_file.filename)
-                    unique_cover_letter_filename = generate_unique_filename(original_cover_letter_filename)
-
-                    # Create full file path
-                    file_path = os.path.join(current_app.config['FILE_STORAGE_PATH'], 'Cover_Letters', unique_cover_letter_filename)
-
-                    try:
-                        # Save the file
-                        cover_letter_file.save(file_path)
-                        # flash(f'File "{original_cover_letter_filename}" uploaded successfully as "{unique_cover_letter_filename}"!', 'success')
                     except Exception as e:
                         flash(f'Error uploading file: {str(e)}', 'error')
 
                 # Check if job already exists
                 if posting_id and Job.query.filter_by(posting_id=posting_id).first():
                     flash('Job posting ID already exists!', 'error')
-                    return render_template('jobs/create.html', form=form)
+                    return render_template('jobs/create.html', form=form, settings=settings, github_configured=github_configured)
                 
                 # Create new job
                 job = Job(
@@ -301,17 +307,60 @@ def create():
                 
                 try:
                     db.session.add(job)
+                    db.session.flush()  # Get the ID before committing
+                    
+                    # Handle GitHub branch creation
+                    if create_github_branch and github_configured:
+                        try:
+                            github_service = GitHubService()
+                            if not github_branch_name:
+                                github_branch_name = github_service.generate_branch_name(company, title, job.id)
+                            
+                            success, message = github_service.create_branch(github_branch_name)
+                            if success:
+                                job.github_branch = github_branch_name
+                                flash(f'GitHub branch created: {github_branch_name}', 'success')
+                            else:
+                                flash(f'GitHub branch creation failed: {message}', 'warning')
+                        except Exception as e:
+                            flash(f'GitHub integration error: {str(e)}', 'warning')
+                    
                     db.session.commit()
                     flash('Job created successfully!', 'success')
-                    print("Before redirect to index")
                     return redirect('/')
                 except Exception as e:
                     print(f"Error creating job: {e}")
                     db.session.rollback()
                     flash('Error creating job!', 'error')
             
-            print("Rendering create job form")
-            return render_template('jobs/create.html', form=form)
+
+                if job_description_file:
+                    original_job_description_filename = secure_filename(job_description_file.filename)
+                    unique_job_description_filename = generate_unique_filename(original_job_description_filename)
+
+                    # Create full file path
+                    file_path = os.path.join(current_app.config['FILE_STORAGE_PATH'], 'Job_Descriptions', unique_job_description_filename)
+
+                    try:
+                        # Save the file
+                        job_description_file.save(file_path)
+                    except Exception as e:
+                        flash(f'Error uploading file: {str(e)}', 'error')
+
+                if cover_letter_file:
+                    original_cover_letter_filename = secure_filename(cover_letter_file.filename)
+                    unique_cover_letter_filename = generate_unique_filename(original_cover_letter_filename)
+
+                    # Create full file path
+                    file_path = os.path.join(current_app.config['FILE_STORAGE_PATH'], 'Cover_Letters', unique_cover_letter_filename)
+
+                    try:
+                        # Save the file
+                        cover_letter_file.save(file_path)
+                    except Exception as e:
+                        flash(f'Error uploading file: {str(e)}', 'error')
+
+            return render_template('jobs/create.html', form=form, settings=settings, github_configured=github_configured)
 
 @jobs_bp.route('/<int:job_id>/view', methods=['GET', 'POST'])
 def view(job_id):
