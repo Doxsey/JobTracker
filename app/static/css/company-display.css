@@ -1,0 +1,147 @@
+.job-header-card {
+    background: linear-gradient(135deg, #343a40 0%, #495057 100%);
+    border: 1px solid #6c757d;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    margin-bottom: 2rem;
+  }
+
+  .job-header-top {
+    padding: 1.25rem;
+    border-bottom: 1px solid #6c757d;
+  }
+
+  .job-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin: 0;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+
+  .company-name {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+    margin-top: 0.25rem;
+  }
+
+  .job-id-badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    font-size: 0.85rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 2rem;
+    font-weight: 500;
+  }
+
+  .job-details-grid {
+    padding: 1.5rem;
+  }
+
+  .detail-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(108, 117, 125, 0.3);
+  }
+
+  .detail-item:last-child {
+    border-bottom: none;
+  }
+
+  .detail-icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 0.75rem;
+    color: #0d6efd;
+    flex-shrink: 0;
+  }
+
+  .detail-label {
+    font-weight: 600;
+    color: #adb5bd;
+    margin-right: 0.75rem;
+    min-width: 100px;
+    flex-shrink: 0;
+  }
+
+  .detail-value {
+    color: #fff;
+    font-weight: 500;
+    flex-grow: 1;
+  }
+
+  .status-badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: 2rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .status-open {
+    background: linear-gradient(135deg, #198754 0%, #157347 100%);
+    color: #fff;
+    border: 1px solid #146c43;
+  }
+
+  .status-closed {
+    background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+    color: #fff;
+    border: 1px solid #495057;
+  }
+
+  .salary-range {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    color: #20c997;
+  }
+
+  .posting-url {
+    color: #0dcaf0;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .posting-url:hover {
+    color: #3dd5f3;
+    text-decoration: underline;
+  }
+
+  @media (max-width: 768px) {
+    .job-header-top {
+      padding: 1rem;
+    }
+
+    .job-title {
+      font-size: 1.5rem;
+    }
+
+    .company-name {
+      font-size: 1rem;
+    }
+
+    .job-details-grid {
+      padding: 1rem;
+    }
+
+    .detail-item {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 0.5rem 0;
+    }
+
+    .detail-label {
+      margin-bottom: 0.25rem;
+      min-width: auto;
+    }
+
+    .detail-icon {
+      margin-bottom: 0.25rem;
+    }
+  }

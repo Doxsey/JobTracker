@@ -247,42 +247,50 @@
 {% endmacro %}
 
 {% macro job_display_top_of_page(job) %}
-<div class="card card-body sub-detail-row">
-  <div class="row">
-    <div class="col-md-4">
-      <p>
-        <strong>Company:</strong>
-        {{ job.company }}
-      </p>
-      <p>
-        <strong>Title:</strong>
-        {{ job.title }}
-      </p>
-    </div>
-    <div class="col-md-4">
-      <p>
-        <strong>Location:</strong>
-        {{ job.location }}
-      </p>
-      <p>
-        <strong>Remote Option:</strong>
-        {{ job.remote_option }}
-      </p>
-    </div>
-    <div class="col-md-4">
-      <p>
-        <strong>Date Created:</strong>
-        {{ job.created_dt.strftime('%m-%d-%Y') }}
-      </p>
-      <p>
-        <strong>Job ID:</strong>
-        {{ job.id }}
-      </p>
+<div class="job-header-card">
+  <div class="job-header-top">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <div class="d-flex align-items-center">
+          <div>
+            <h2 class="job-title mb-1">{{ job.title }}</h2>
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+              <span class="company-name">
+                <i class="bi bi-building me-1"></i>{{ job.company }}
+              </span>
+              <span class="text-light">
+                <i class="bi bi-geo-alt me-1"></i>{{ job.location }}
+              </span>
+              <span class="text-light">
+                <i class="bi bi-calendar-plus me-1"></i>{{ job.created_dt.strftime('%b %d, %Y') }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4 text-end">
+        <div class="d-flex flex-column align-items-end gap-2">
+          <span class="job-id-badge">
+            <i class="bi bi-hash me-1"></i>ID: {{ job.id }}
+          </span>
+          {% if job.posting_status == 'Open' %}
+          <span class="status-badge status-open">
+            <i class="bi bi-circle-fill me-1"></i>{{ job.posting_status }}
+          </span>
+          {% elif job.posting_status == 'Closed' %}
+          <span class="status-badge status-closed">
+            <i class="bi bi-circle-fill me-1"></i>{{ job.posting_status }}
+          </span>
+          {% endif %}
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
-{% endmacro %} {% macro file_edit_card(job, file_type, file_description) %}
+{% endmacro %}
+
+{% macro file_edit_card(job, file_type, file_description) %}
 
 <div class="col-md-3 me-3" id="file-{{ file_type }}">
   <div class="card">
@@ -306,7 +314,9 @@
   </div>
 </div>
 
-{% endmacro %} {% macro file_add_card(job, file_type, file_description) %}
+{% endmacro %}
+
+{% macro file_add_card(job, file_type, file_description) %}
 
 <div class="col-md-3 me-3" id="file-{{ file_type }}">
   <div class="card">
