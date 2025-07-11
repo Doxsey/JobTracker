@@ -4,10 +4,11 @@ from app import db
 from flask_wtf import FlaskForm
 from wtforms import DateField, StringField, BooleanField, SubmitField, TextAreaField, DecimalField
 from flask_wtf.file import FileField, FileRequired, FileAllowed
-from wtforms.validators import DataRequired
+from wtforms.validators import DataRequired, Optional
 from werkzeug.utils import secure_filename
 from app.models import Job, Settings
 from ..services.api_service import APIService
+from ..services.github_service import GitHubService
 from app.utils.html_utils import sanitize_html
 import os, uuid, json
 import requests
@@ -40,6 +41,8 @@ class NewJobForm(FlaskForm):
                    'Only PDF and document files allowed!')
     ])
     use_default_resume = BooleanField('Use Default Resume', default=True)
+    create_github_branch = BooleanField('Create GitHub Branch on Job Creation', default=False)
+    github_branch_name = StringField('GitHub Branch Name (auto-generated if empty)', validators=[Optional()])
     submit = SubmitField('Add Job')
 
 class ViewJobForm(FlaskForm):
@@ -56,6 +59,7 @@ class ViewJobForm(FlaskForm):
     posting_url = StringField('Posting URL')
     company_website = StringField('Company Website')
     created_dt = StringField('Date Created')
+    github_branch = StringField('GitHub Branch', render_kw={'readonly': True})
     submit = SubmitField('Save Changes')
 
 class DeleteJobForm(FlaskForm):
@@ -66,13 +70,88 @@ class CloseJobForm(FlaskForm):
     closing_date = DateField("Date Closed", format='%Y-%m-%d', default=date.today, validators=[DataRequired()])
     submit = SubmitField('Close Job')
 
+@jobs_bp.route('/create-github-branch', methods=['POST'])
+def create_github_branch():
+    """Create a minimal job entry and GitHub branch"""
+    github_configured = bool(current_app.config.get('GITHUB_TOKEN') and current_app.config.get('GITHUB_REPO'))
+    
+    if not github_configured:
+        return jsonify({'error': 'GitHub integration not configured'}), 400
+    
+    data = request.get_json()
+    company = data.get('company', '').strip()
+    title = data.get('title', '').strip()
+    custom_branch_name = data.get('github_branch_name', '').strip()
+    
+    if not company or not title:
+        return jsonify({'error': 'Company and title are required'}), 400
+    
+    try:
+        # Create minimal job entry
+        job = Job(
+            company=company,
+            title=title,
+            description='',  # Will be updated when full form is submitted
+            location='',     # Will be updated when full form is submitted
+            is_draft=True    # Mark as draft until full form is submitted
+        )
+        
+        db.session.add(job)
+        db.session.flush()  # Get the ID
+        
+        # Create GitHub branch
+        github_service = GitHubService()
+        if not custom_branch_name:
+            branch_name = github_service.generate_branch_name(company, title, job.id)
+        else:
+            branch_name = custom_branch_name
+        
+        success, message = github_service.create_branch(branch_name)
+        if success:
+            job.github_branch = branch_name
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'job_id': job.id,
+                'github_branch': branch_name,
+                'github_branch_url': f"https://github.com/{current_app.config.get('GITHUB_REPO')}/tree/{branch_name}",
+                'message': f'GitHub branch "{branch_name}" created successfully'
+            }), 200
+        else:
+            db.session.rollback()
+            return jsonify({'error': f'Failed to create GitHub branch: {message}'}), 500
+            
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error creating GitHub branch: {str(e)}")
+        return jsonify({'error': f'Error creating GitHub branch: {str(e)}'}), 500
+
 @jobs_bp.route('/create', methods=['GET', 'POST'])
 def create():
     settings = Settings.query.all()
+    github_configured = bool(current_app.config.get('GITHUB_TOKEN') and current_app.config.get('GITHUB_REPO'))
+    
+    # Check if we're continuing from a GitHub branch creation
+    draft_job_id = request.args.get('draft_job_id')
+    draft_job = None
+    if draft_job_id:
+        draft_job = Job.query.filter_by(id=draft_job_id, is_draft=True).first()
+    
     if request.method == 'GET':
         # Handle GET request - show the form
         form = NewJobForm()
-        return render_template('jobs/create.html', form=form, settings=settings)
+        
+        # Pre-populate form if continuing from draft
+        if draft_job:
+            form.company.data = draft_job.company
+            form.title.data = draft_job.title
+        
+        return render_template('jobs/create.html', 
+                             form=form, 
+                             settings=settings, 
+                             github_configured=github_configured,
+                             draft_job=draft_job)
     
     # Handle POST request
     if request.method == 'POST':
@@ -109,16 +188,21 @@ def create():
                 posting_id = data.get('posting_id')
                 referrer = data.get('referrer')
                 referrer_posting_id = data.get('referrer_posting_id')
+                create_github_branch = data.get('create_github_branch', False)
+                github_branch_name = data.get('github_branch_name')
+                draft_job_id = data.get('draft_job_id')  # Check if updating existing draft
                 
                 # Basic validation for required fields
                 if not all([company, title, description]):
                     return jsonify({'error': 'Missing required fields: company, title, description'}), 400
                 
-                # Check if job already exists
-                if posting_id and Job.query.filter_by(posting_id=posting_id).first():
-                    return jsonify({'error': 'Job posting ID already exists'}), 409
+                # Check if job already exists (unless updating draft)
+                if posting_id and not draft_job_id:
+                    existing_job = Job.query.filter_by(posting_id=posting_id).first()
+                    if existing_job:
+                        return jsonify({'error': 'Job posting ID already exists'}), 409
                 
-                # Handle resume file upload if present
+                # Handle file uploads
                 unique_resume_filename = None
                 unique_job_description_filename = None
                 unique_cover_letter_filename = None
@@ -141,30 +225,75 @@ def create():
                     if isinstance(unique_cover_letter_filename, tuple):  # Error occurred
                         return unique_cover_letter_filename
                 
-                # Create new job
-                job = Job(
-                    company=company,
-                    company_website=company_website,
-                    title=title,
-                    description=description,
-                    location=location,
-                    salary_range_low=salary_range_low,
-                    salary_range_high=salary_range_high,
-                    remote_option=remote_option,
-                    posting_id=posting_id,
-                    referrer=referrer,
-                    referrer_posting_id=referrer_posting_id,
-                    posting_url=posting_url,
-                    resume_file=unique_resume_filename,
-                    job_description_file=unique_job_description_filename,
-                    cover_letter_file=unique_cover_letter_filename
-                )
+                # Update existing draft or create new job
+                if draft_job_id:
+                    # Update existing draft job
+                    job = Job.query.filter_by(id=draft_job_id, is_draft=True).first()
+                    if not job:
+                        return jsonify({'error': 'Draft job not found'}), 404
+                    
+                    # Update all fields
+                    job.company = company
+                    job.company_website = company_website
+                    job.title = title
+                    job.description = description
+                    job.location = location
+                    job.salary_range_low = salary_range_low
+                    job.salary_range_high = salary_range_high
+                    job.remote_option = remote_option
+                    job.posting_id = posting_id
+                    job.referrer = referrer
+                    job.referrer_posting_id = referrer_posting_id
+                    job.posting_url = posting_url
+                    job.resume_file = unique_resume_filename or job.resume_file
+                    job.job_description_file = unique_job_description_filename or job.job_description_file
+                    job.cover_letter_file = unique_cover_letter_filename or job.cover_letter_file
+                    job.is_draft = False  # Mark as complete
+                else:
+                    # Create new job
+                    job = Job(
+                        company=company,
+                        company_website=company_website,
+                        title=title,
+                        description=description,
+                        location=location,
+                        salary_range_low=salary_range_low,
+                        salary_range_high=salary_range_high,
+                        remote_option=remote_option,
+                        posting_id=posting_id,
+                        referrer=referrer,
+                        referrer_posting_id=referrer_posting_id,
+                        posting_url=posting_url,
+                        resume_file=unique_resume_filename,
+                        job_description_file=unique_job_description_filename,
+                        cover_letter_file=unique_cover_letter_filename,
+                        is_draft=False
+                    )
+                    
+                    db.session.add(job)
+                    db.session.flush()  # This assigns the ID without committing
+                    
+                    # Handle GitHub branch creation for new jobs
+                    if create_github_branch and github_configured:
+                        try:
+                            github_service = GitHubService()
+                            if not github_branch_name:
+                                github_branch_name = github_service.generate_branch_name(company, title, job.id)
+                            
+                            success, message = github_service.create_branch(github_branch_name)
+                            if success:
+                                job.github_branch = github_branch_name
+                            else:
+                                # Log warning but don't fail the job creation
+                                current_app.logger.warning(f"Failed to create GitHub branch: {message}")
+                        except Exception as e:
+                            current_app.logger.error(f"GitHub branch creation error: {str(e)}")
                 
-                db.session.add(job)
+                # Commit the job
                 db.session.commit()
                 
                 response_data = {
-                    'message': 'Job created successfully',
+                    'message': 'Job created successfully' if not draft_job_id else 'Job updated successfully',
                     'job_id': job.id,
                     'company': job.company,
                     'title': job.title,
@@ -179,6 +308,10 @@ def create():
 
                 if unique_cover_letter_filename:
                     response_data['cover_letter_file'] = unique_cover_letter_filename
+                
+                if job.github_branch:
+                    response_data['github_branch'] = job.github_branch
+                    response_data['github_branch_url'] = f"https://github.com/{current_app.config.get('GITHUB_REPO')}/tree/{job.github_branch}"
 
                 return jsonify(response_data), 201
                 
@@ -190,7 +323,16 @@ def create():
                 return jsonify({'error': 'Error creating job'}), 500
         
         else:
+            # Handle regular form submission
             form = NewJobForm()
+            
+            # Check if we're updating a draft job
+            draft_job_id = request.form.get('draft_job_id')
+            if draft_job_id:
+                draft_job = Job.query.filter_by(id=draft_job_id, is_draft=True).first()
+            else:
+                draft_job = None
+            
             if form.validate_on_submit():
                 company = form.company.data
                 company_website = form.company_website.data
@@ -208,7 +350,11 @@ def create():
                 resume_file = form.resume_file.data
                 job_description_file = form.job_description_file.data
                 cover_letter_file = form.cover_letter_file.data
+                create_github_branch = form.create_github_branch.data
+                github_branch_name = form.github_branch_name.data
                 
+                # Handle default resume
+                unique_resume_filename = None
                 if use_default_resume:
                     resume_file = None
                     # Get the default resume filename from settings
@@ -219,7 +365,8 @@ def create():
 
                         if not os.path.exists(file_path):
                             flash('Default resume file not found!', 'error')
-                            return render_template('jobs/create.html', form=form)
+                            return render_template('jobs/create.html', form=form, settings=settings, 
+                                                 github_configured=github_configured, draft_job=draft_job)
 
                         unique_resume_filename = generate_unique_filename(default_resume_file)
                         new_file_path = os.path.join(current_app.config['FILE_STORAGE_PATH'], 'Resumes', unique_resume_filename)
@@ -231,7 +378,10 @@ def create():
                                     dest_file.write(src_file.read())
                         except Exception as e:
                             flash(f'Error using default resume file: {str(e)}', 'error')
+                            return render_template('jobs/create.html', form=form, settings=settings, 
+                                                 github_configured=github_configured, draft_job=draft_job)
 
+                # Handle uploaded resume file
                 if resume_file and not use_default_resume:
                     original_resume_filename = secure_filename(resume_file.filename)
                     unique_resume_filename = generate_unique_filename(original_resume_filename)
@@ -242,11 +392,12 @@ def create():
                     try:
                         # Save the file
                         resume_file.save(file_path)
-                        # flash(f'File "{original_resume_filename}" uploaded successfully as "{unique_resume_filename}"!', 'success')
                         
                     except Exception as e:
                         flash(f'Error uploading file: {str(e)}', 'error')
 
+                # Handle other file uploads
+                unique_job_description_filename = None
                 if job_description_file:
                     original_job_description_filename = secure_filename(job_description_file.filename)
                     unique_job_description_filename = generate_unique_filename(original_job_description_filename)
@@ -257,10 +408,10 @@ def create():
                     try:
                         # Save the file
                         job_description_file.save(file_path)
-                        # flash(f'File "{original_job_description_filename}" uploaded successfully as "{unique_job_description_filename}"!', 'success')
                     except Exception as e:
                         flash(f'Error uploading file: {str(e)}', 'error')
 
+                unique_cover_letter_filename = None
                 if cover_letter_file:
                     original_cover_letter_filename = secure_filename(cover_letter_file.filename)
                     unique_cover_letter_filename = generate_unique_filename(original_cover_letter_filename)
@@ -271,47 +422,89 @@ def create():
                     try:
                         # Save the file
                         cover_letter_file.save(file_path)
-                        # flash(f'File "{original_cover_letter_filename}" uploaded successfully as "{unique_cover_letter_filename}"!', 'success')
                     except Exception as e:
                         flash(f'Error uploading file: {str(e)}', 'error')
 
-                # Check if job already exists
-                if posting_id and Job.query.filter_by(posting_id=posting_id).first():
-                    flash('Job posting ID already exists!', 'error')
-                    return render_template('jobs/create.html', form=form)
+                # Check if job already exists (unless updating draft)
+                if posting_id and not draft_job:
+                    existing_job = Job.query.filter_by(posting_id=posting_id).first()
+                    if existing_job:
+                        flash('Job posting ID already exists!', 'error')
+                        return render_template('jobs/create.html', form=form, settings=settings, 
+                                             github_configured=github_configured, draft_job=draft_job)
                 
-                # Create new job
-                job = Job(
-                    company=company,
-                    company_website=company_website,
-                    title=title,
-                    description=description,
-                    location=location,
-                    salary_range_low=salary_range_low,
-                    salary_range_high=salary_range_high,
-                    remote_option=remote_option,
-                    posting_id=posting_id,
-                    referrer=referrer,
-                    referrer_posting_id=referrer_posting_id,
-                    posting_url=posting_url,
-                    resume_file=unique_resume_filename if (resume_file or use_default_resume) else None,
-                    job_description_file=unique_job_description_filename if job_description_file else None,
-                    cover_letter_file=unique_cover_letter_filename if cover_letter_file else None
-                )
+                # Update existing draft or create new job
+                if draft_job:
+                    # Update existing draft job
+                    job = draft_job
+                    job.company = company
+                    job.company_website = company_website
+                    job.title = title
+                    job.description = description
+                    job.location = location
+                    job.salary_range_low = salary_range_low
+                    job.salary_range_high = salary_range_high
+                    job.remote_option = remote_option
+                    job.posting_id = posting_id
+                    job.referrer = referrer
+                    job.referrer_posting_id = referrer_posting_id
+                    job.posting_url = posting_url
+                    job.resume_file = unique_resume_filename or job.resume_file
+                    job.job_description_file = unique_job_description_filename or job.job_description_file
+                    job.cover_letter_file = unique_cover_letter_filename or job.cover_letter_file
+                    job.is_draft = False  # Mark as complete
+                else:
+                    # Create new job
+                    job = Job(
+                        company=company,
+                        company_website=company_website,
+                        title=title,
+                        description=description,
+                        location=location,
+                        salary_range_low=salary_range_low,
+                        salary_range_high=salary_range_high,
+                        remote_option=remote_option,
+                        posting_id=posting_id,
+                        referrer=referrer,
+                        referrer_posting_id=referrer_posting_id,
+                        posting_url=posting_url,
+                        resume_file=unique_resume_filename,
+                        job_description_file=unique_job_description_filename,
+                        cover_letter_file=unique_cover_letter_filename,
+                        is_draft=False
+                    )
                 
                 try:
-                    db.session.add(job)
+                    if not draft_job:
+                        db.session.add(job)
+                    db.session.flush()  # Get the ID before committing
+                    
+                    # Handle GitHub branch creation for new jobs
+                    if create_github_branch and github_configured and not draft_job:
+                        try:
+                            github_service = GitHubService()
+                            if not github_branch_name:
+                                github_branch_name = github_service.generate_branch_name(company, title, job.id)
+                            
+                            success, message = github_service.create_branch(github_branch_name)
+                            if success:
+                                job.github_branch = github_branch_name
+                                flash(f'GitHub branch created: {github_branch_name}', 'success')
+                            else:
+                                flash(f'GitHub branch creation failed: {message}', 'warning')
+                        except Exception as e:
+                            flash(f'GitHub integration error: {str(e)}', 'warning')
+                    
                     db.session.commit()
-                    flash('Job created successfully!', 'success')
-                    print("Before redirect to index")
+                    flash('Job created successfully!' if not draft_job else 'Job updated successfully!', 'success')
                     return redirect('/')
                 except Exception as e:
                     print(f"Error creating job: {e}")
                     db.session.rollback()
                     flash('Error creating job!', 'error')
-            
-            print("Rendering create job form")
-            return render_template('jobs/create.html', form=form)
+
+            return render_template('jobs/create.html', form=form, settings=settings, 
+                                 github_configured=github_configured, draft_job=draft_job)
 
 @jobs_bp.route('/<int:job_id>/view', methods=['GET', 'POST'])
 def view(job_id):

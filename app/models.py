@@ -13,9 +13,9 @@ class Job(db.Model):
     company = db.Column(db.String(100), nullable=False)
     company_website = db.Column(db.String(200), nullable=True)
     title = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text, nullable=False)
+    description = db.Column(db.Text, nullable=True)
     description_format = db.Column(db.String(20), default='html')  # Track format: 'html', 'text', 'markdown'
-    location = db.Column(db.String(100), nullable=False)
+    location = db.Column(db.String(100), nullable=True)
     referrer = db.Column(db.String(100), nullable=True)
     referrer_posting_id = db.Column(db.String(100), nullable=True)
     salary_range_low = db.Column(db.Float, nullable=True)
@@ -28,6 +28,8 @@ class Job(db.Model):
     cover_letter_file = db.Column(db.String(50), nullable=True)
     posting_status = db.Column(db.String(50), default='Open')
     posting_url = db.Column(db.String(200), nullable=True)
+    github_branch = db.Column(db.String(100), nullable=True)  # New field for GitHub branch name
+    is_draft = db.Column(db.Boolean, default=False)  # New field to track draft status
     notes = db.relationship('JobNotes', backref='Job', cascade='all, delete-orphan')
     activities = db.relationship('JobActivities', backref='Job', cascade='all, delete-orphan')
 
@@ -55,6 +57,8 @@ class Job(db.Model):
             'cover_letter_file': self.cover_letter_file,
             'posting_status': self.posting_status,
             'posting_url': self.posting_url,
+            'github_branch': self.github_branch,
+            'is_draft': self.is_draft,
             'notes': [note.to_dict() for note in self.notes],
             'activities': [activity.to_dict() for activity in self.activities]
         }

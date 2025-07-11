@@ -24,7 +24,9 @@ class SettingsForm(FlaskForm):
 @settings_bp.route('/', methods=['GET', 'POST'])
 def index():
     current_settings = Settings.query.all()
-    return render_template('settings/index.html', current_settings=current_settings)
+    return render_template('settings/index.html', 
+                         current_settings=current_settings,
+                         config=current_app.config)
 
 @settings_bp.route('/api/update', methods=['POST'])
 def update_setting():
