@@ -41,7 +41,7 @@ class NewJobForm(FlaskForm):
                    'Only PDF and document files allowed!')
     ])
     use_default_resume = BooleanField('Use Default Resume', default=True)
-    create_github_branch = BooleanField('Create GitHub Branch for Custom Documents', default=False)
+    create_github_branch = BooleanField('Create GitHub Branch on Job Creation', default=False)
     github_branch_name = StringField('GitHub Branch Name (auto-generated if empty)', validators=[Optional()])
     submit = SubmitField('Add Job')
 
