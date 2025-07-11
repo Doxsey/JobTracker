@@ -29,6 +29,7 @@ class Job(db.Model):
     posting_status = db.Column(db.String(50), default='Open')
     posting_url = db.Column(db.String(200), nullable=True)
     github_branch = db.Column(db.String(100), nullable=True)  # New field for GitHub branch name
+    is_draft = db.Column(db.Boolean, default=False)  # New field to track draft status
     notes = db.relationship('JobNotes', backref='Job', cascade='all, delete-orphan')
     activities = db.relationship('JobActivities', backref='Job', cascade='all, delete-orphan')
 
@@ -57,6 +58,7 @@ class Job(db.Model):
             'posting_status': self.posting_status,
             'posting_url': self.posting_url,
             'github_branch': self.github_branch,
+            'is_draft': self.is_draft,
             'notes': [note.to_dict() for note in self.notes],
             'activities': [activity.to_dict() for activity in self.activities]
         }

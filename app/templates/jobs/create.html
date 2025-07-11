@@ -6,9 +6,13 @@ Tracker{% endblock %} {% block content %}
     <h3>Add New Job</h3>
     <br />
 
+    <input type="hidden" name="job_id" id="job_id" value="">
+
     <form action="" method="post" enctype="multipart/form-data">
       {{ form.hidden_tag() }}
       <div class="container text-center">
+        {# {{ form.existing_id(id="existing_id") }} #}
+        {{ form.existing_id(id="existing_id", type="hidden") }}
         <div class="row">
           <div class="col">
             {{ form.company(size=32, class="form-control", placeholder="Company") }}
@@ -102,56 +106,68 @@ Tracker{% endblock %} {% block content %}
             {{ form.create_github_branch.label(class="form-check-label") }}
           </div>
         </div>
-        <div class="row d-none ms-4" id="github-branch-name-container" style="max-width: 75%;">
-          <div class="col"></div>
-          {{ form.github_branch_name(size=32, class="form-control", placeholder="Leave empty for auto-generated name")
-          }}
-          <small class="form-text text-muted">
-            Branch name format: job/company-name/job-title-YYYYMMDD-jobID
-          </small>
-          <br />
+        <div class="row d-none ms-4" id="github-branch-name-container">
+          <div class="col-auto">
+            {{ form.github_branch_name(size=32, class="form-control", placeholder="Leave empty for auto-generated name")
+            }}
+            <small class="form-text text-muted">
+              Branch name format: job/company-name/job-title-YYYYMMDD-jobID
+            </small>
+            <br />
+          </div>
+          <div class="col-auto">
+            <button type="button" class="btn btn-primary" id="generate_branch_button">Generate Branch Now</button>
+            <br />
+            {# TODO: make the button and info into rows instead of cols here #}
+            <small class="form-text text-muted">
+              Otherwise, the branch will be automatically generated when the job is created.
+            </small>
+          </div>
         </div>
+        {% endif %}
+
+        <hr />
+        <br />
+
+        <div class="row">
+          <div class="col">
+            <h5 class="text-start">Referrer Information</h5>
+            <br />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            {{ form.referrer(size=32, class="form-control", placeholder="Referrer") }}
+            <br />
+          </div>
+          <div class="col">
+            {{ form.referrer_posting_id(size=32, class="form-control", placeholder="Referrer Posting ID") }}
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            {{ form.posting_url(size=32, class="form-control", placeholder="Posting URL") }}
+            <br />
+          </div>
+        </div>
+
+        <div class="mb-3">{{ form.submit(class="btn btn-success") }}</div>
       </div>
-      {% endif %}
+    </form>
 
-      <hr />
-      <br />
-
-      <div class="row">
-        <div class="col">
-          <h5 class="text-start">Referrer Information</h5>
-          <br />
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col">
-          {{ form.referrer(size=32, class="form-control", placeholder="Referrer") }}
-          <br />
-        </div>
-        <div class="col">
-          {{ form.referrer_posting_id(size=32, class="form-control", placeholder="Referrer Posting ID") }}
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col">
-          {{ form.posting_url(size=32, class="form-control", placeholder="Posting URL") }}
-          <br />
-        </div>
-      </div>
-
-      <div class="mb-3">{{ form.submit(class="btn btn-success") }}</div>
+    {% for field, errors in form.errors.items() %}
+    {% for error in errors %}
+    <div class="row">
+      <div class="alert alert-danger">{{ field }}: {{ error }}</div>
+    </div>
+    {% endfor %}
+    {% endfor %}
   </div>
-  </form>
+</div>
 
-  {% for field, errors in form.errors.items() %} {% for error in errors %}
-  <div class="row">
-    <div class="alert alert-danger">{{ field }}: {{ error }}</div>
-  </div>
-  {% endfor %} {% endfor %}
-</div>
-</div>
+<script src="{{ url_for('static', filename='js/jobs/create.js') }}"></script>
 
 <script>
   document.addEventListener('DOMContentLoaded', function () {
