@@ -16,16 +16,45 @@
             <div class="row mb-4">
                 <div class="col-12">
                     {% if rclone_available %}
-                    <div class="alert alert-success" role="alert">
-                        <i class="bi bi-check-circle-fill me-2"></i>
-                        <strong>rclone is available</strong> - Cloud backup functionality is ready
+
+                    <div class="card border-success p-3 mb-3">
+                        <div class="col-12">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <i class="bi bi-cloud-check-fill text-success" style="font-size: 2rem;"></i>
+                                </div>
+                                <div class="col">
+                                    <div class="fw-bold text-success">Cloud Backup Available</div>
+                                    <small class="text-muted">rclone is configured and ready for use</small>
+                                </div>
+                                <div class="col-auto">
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-check-circle me-1"></i>Active
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+
                     {% else %}
-                    <div class="alert alert-warning" role="alert">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                        <strong>rclone not found</strong> - Please install rclone to use cloud backup features
-                        <br><small class="mt-2 d-block">Visit <a href="https://rclone.org/downloads/"
-                                target="_blank">rclone.org</a> to download and install rclone</small>
+
+                    <div class="card border-warning p-3 mb-3">
+                        <div class="col-12">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <i class="bi bi-exclamation-triangle-fill text-warning"
+                                        style="font-size: 2rem;"></i>
+                                </div>
+                                <div class="col">
+                                    <div class="fw-bold text-warning">rclone not found</div>
+                                    <small class="text-muted">Please install rclone to use cloud backup features</small>
+                                </div>
+                                <div class="col-auto">
+                                    <small class="mt-2 d-block">Visit <a href="https://rclone.org/downloads/"
+                                            target="_blank">rclone.org</a> to download and install rclone</small>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     {% endif %}
                 </div>
@@ -97,7 +126,8 @@
                                 <h5 class="text-muted mt-3">No cloud remotes configured</h5>
                                 <p class="text-muted">
                                     Configure rclone remotes to enable cloud backup functionality.<br>
-                                    Run <code>rclone config</code> in your terminal to set up cloud storage providers.
+                                    Run <code>rclone config</code> in your terminal to set up cloud storage
+                                    providers.
                                 </p>
                             </div>
                             {% endif %}
@@ -141,7 +171,8 @@
                                                 {{ backup.name }}
                                                 {% if backup.detection_method != 'standard_pattern' %}
                                                 <br><small class="text-muted">
-                                                    Detected by: {{ backup.detection_method.replace('_', ' ').title() }}
+                                                    Detected by: {{ backup.detection_method.replace('_', '
+                                                    ').title() }}
                                                 </small>
                                                 {% endif %}
                                             </td>
