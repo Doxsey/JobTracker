@@ -20,6 +20,11 @@ class Config:
     GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
     GITHUB_REPO = os.environ.get('GITHUB_REPO')  # Format: "username/repository"
     GITHUB_BASE_BRANCH = os.environ.get('GITHUB_BASE_BRANCH', 'main')
+
+    # rclone configuration for cloud backups
+    RCLONE_CONFIG_PATH = os.environ.get('RCLONE_CONFIG_PATH')  # Optional: custom rclone config path
+    RCLONE_DEFAULT_REMOTE = os.environ.get('RCLONE_DEFAULT_REMOTE')  # Optional: default remote to use
+    RCLONE_BACKUP_PATH = os.environ.get('RCLONE_BACKUP_PATH', 'job-tracker-backups')  # Path on remote storage
     
     @property
     def SQLALCHEMY_DATABASE_URI(self):

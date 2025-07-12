@@ -1,6 +1,6 @@
-# app/blueprints/backup.py
 from flask import Blueprint, render_template, jsonify, request, send_file, flash, redirect, url_for, current_app, Response
 from app import db
+from app.services.cloud_backup_service import CloudBackupService
 import os, io, zipfile, tempfile, sqlite3, shutil, subprocess
 from datetime import datetime
 from werkzeug.utils import secure_filename
@@ -83,6 +83,302 @@ def export_data_stream():
         flash(f'Export failed: {str(e)}', 'danger')
         # return redirect(url_for('settings.index'))
         return render_template('backup/backup.html')
+
+@backup_bp.route('/cloud', methods=['GET'])
+def cloud_backup_page():
+    """Cloud backup management page"""
+    cloud_service = CloudBackupService()
+    
+    # Check if rclone is available
+    rclone_available = cloud_service.check_rclone_available()
+    print(f"rclone available: {rclone_available}")
+    
+    # Get configured remotes
+    remotes = cloud_service.list_configured_remotes() if rclone_available else []
+    print(f"Found {len(remotes)} remotes: {[r['name'] for r in remotes]}")
+    
+    # Get cloud backups for each remote
+    cloud_backups = {}
+    if rclone_available:
+        for remote in remotes:
+            print(f"\n--- Checking backups for remote: {remote['name']} ---")
+            try:
+                backups = cloud_service.list_cloud_backups(remote['name'])
+                cloud_backups[remote['name']] = backups
+                print(f"Found {len(backups)} backups for {remote['name']}")
+                
+                # Debug: show backup details
+                for backup in backups:
+                    print(f"  - {backup['name']} ({backup['size_mb']} MB)")
+                    
+            except Exception as e:
+                print(f"Error listing backups for {remote['name']}: {str(e)}")
+                current_app.logger.error(f"Error listing backups for {remote['name']}: {str(e)}")
+                cloud_backups[remote['name']] = []
+    
+    print(f"\nFinal cloud_backups dict: {list(cloud_backups.keys())}")
+    for remote_name, backups in cloud_backups.items():
+        print(f"  {remote_name}: {len(backups)} backups")
+    
+    return render_template('backup/cloud_backup.html',
+                         rclone_available=rclone_available,
+                         remotes=remotes,
+                         cloud_backups=cloud_backups,
+                         cloud_backup_path=cloud_service.backup_path)
+
+@backup_bp.route('/cloud/test-connection', methods=['POST'])
+def test_cloud_connection():
+    """Test connection to a cloud remote"""
+    data = request.get_json()
+    remote_name = data.get('remote_name')
+    
+    if not remote_name:
+        return jsonify({'error': 'Remote name is required'}), 400
+    
+    cloud_service = CloudBackupService()
+    success, message = cloud_service.test_remote_connection(remote_name)
+    
+    return jsonify({
+        'success': success,
+        'message': message
+    }), 200 if success else 400
+
+@backup_bp.route('/cloud/upload', methods=['POST'])
+def upload_to_cloud():
+    """Upload backup to cloud storage"""
+    data = request.get_json()
+    remote_name = data.get('remote_name')
+    custom_path = data.get('custom_path')
+    create_new_backup = data.get('create_new_backup', True)
+    
+    if not remote_name:
+        return jsonify({'error': 'Remote name is required'}), 400
+    
+    try:
+        cloud_service = CloudBackupService()
+        
+        # Test connection first
+        connection_ok, conn_message = cloud_service.test_remote_connection(remote_name)
+        if not connection_ok:
+            return jsonify({'error': f'Connection failed: {conn_message}'}), 400
+        
+        # Create backup file
+        if create_new_backup:
+            # Create a proper backup filename (not temporary)
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            backup_filename = f'job_tracker_backup_{timestamp}.zip'
+            
+            # Create backup in a temporary location but with proper name
+            temp_dir = tempfile.mkdtemp()
+            temp_backup_path = os.path.join(temp_dir, backup_filename)
+            
+            try:
+                print(f"Creating backup at: {temp_backup_path}")
+                
+                # Create backup using existing backup logic
+                with zipfile.ZipFile(temp_backup_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                    # Add database backup
+                    db_path = current_app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', '')
+                    
+                    # Create temporary database backup
+                    temp_db_fd, temp_db_path = tempfile.mkstemp(suffix='.db')
+                    try:
+                        os.close(temp_db_fd)
+                        backup_database_sqlite(db_path, temp_db_path)
+                        zipf.write(temp_db_path, 'app.db')
+                    finally:
+                        try:
+                            os.unlink(temp_db_path)
+                        except:
+                            pass
+                    
+                    # Add files
+                    file_storage_path = current_app.config['FILE_STORAGE_PATH']
+                    if os.path.exists(file_storage_path):
+                        for root, dirs, files in os.walk(file_storage_path):
+                            for file in files:
+                                file_path = os.path.join(root, file)
+                                arcname = os.path.join('JobTrackerFiles', os.path.relpath(file_path, file_storage_path))
+                                zipf.write(file_path, arcname)
+                    
+                    # Add manifest
+                    manifest = create_manifest_data()
+                    zipf.writestr('manifest.json', manifest)
+                
+                print(f"Backup created successfully: {backup_filename}")
+                print(f"File size: {os.path.getsize(temp_backup_path)} bytes")
+                
+                # Upload to cloud with the proper filename
+                success, message, file_info = cloud_service.upload_backup(
+                    temp_backup_path, remote_name, custom_path
+                )
+                
+                if success:
+                    print(f"Upload successful: {message}")
+                else:
+                    print(f"Upload failed: {message}")
+                
+                return jsonify({
+                    'success': success,
+                    'message': message,
+                    'file_info': file_info,
+                    'backup_filename': backup_filename  # Include the filename in response
+                }), 200 if success else 500
+                
+            finally:
+                # Clean up temporary directory and all files in it
+                try:
+                    import shutil
+                    shutil.rmtree(temp_dir)
+                    print(f"Cleaned up temporary directory: {temp_dir}")
+                except Exception as e:
+                    print(f"Error cleaning up temp directory: {e}")
+        else:
+            return jsonify({'error': 'Existing backup upload not implemented yet'}), 400
+            
+    except Exception as e:
+        current_app.logger.error(f"Cloud upload error: {str(e)}")
+        print(f"Exception in upload_to_cloud: {str(e)}")
+        return jsonify({'error': f'Upload failed: {str(e)}'}), 500
+
+@backup_bp.route('/cloud/download', methods=['POST'])
+def download_from_cloud():
+    """Download backup from cloud storage"""
+    data = request.get_json()
+    remote_name = data.get('remote_name')
+    remote_file_path = data.get('remote_file_path')
+    
+    if not remote_name or not remote_file_path:
+        return jsonify({'error': 'Remote name and file path are required'}), 400
+    
+    try:
+        cloud_service = CloudBackupService()
+        
+        # Create temporary download location with proper filename
+        filename = os.path.basename(remote_file_path)
+        print(f"Expected filename: {filename}")
+        
+        # Create a temporary directory
+        temp_dir = tempfile.mkdtemp()
+        local_path = os.path.join(temp_dir, filename)
+        
+        print(f"Temporary download path: {local_path}")
+        print(f"Temporary directory: {temp_dir}")
+        
+        try:
+            # Download file
+            success, message = cloud_service.download_backup(
+                remote_name, remote_file_path, local_path
+            )
+            
+            print(f"Download result: success={success}, message={message}")
+            
+            if success and os.path.exists(local_path):
+                # Verify file size before sending
+                file_size = os.path.getsize(local_path)
+                print(f"File exists at {local_path}, size: {file_size} bytes")
+                
+                if file_size == 0:
+                    return jsonify({'error': 'Downloaded file is empty (0 bytes)'}), 500
+                
+                # Use a callback to clean up the temp file after sending
+                def remove_file(response):
+                    try:
+                        import shutil
+                        shutil.rmtree(temp_dir)
+                        print(f"Cleaned up temporary directory: {temp_dir}")
+                    except Exception as e:
+                        print(f"Error cleaning up temp directory: {e}")
+                    return response
+                
+                # Return file as download
+                response = send_file(
+                    local_path,
+                    as_attachment=True,
+                    download_name=filename,
+                    mimetype='application/zip'
+                )
+                
+                # Register cleanup callback
+                response.call_on_close(lambda: remove_file(response))
+                
+                return response
+            else:
+                return jsonify({'error': message or 'Download failed - file not found'}), 500
+                
+        except Exception as download_error:
+            print(f"Download exception: {download_error}")
+            return jsonify({'error': f'Download failed: {str(download_error)}'}), 500
+        finally:
+            # Fallback cleanup - only if response wasn't sent successfully
+            if not success:
+                try:
+                    import shutil
+                    shutil.rmtree(temp_dir)
+                    print(f"Fallback cleanup of temporary directory: {temp_dir}")
+                except Exception as e:
+                    print(f"Error in fallback cleanup: {e}")
+                
+    except Exception as e:
+        current_app.logger.error(f"Cloud download error: {str(e)}")
+        print(f"Route exception: {str(e)}")
+        return jsonify({'error': f'Download failed: {str(e)}'}), 500
+
+@backup_bp.route('/cloud/delete', methods=['POST'])
+def delete_cloud_backup():
+    """Delete backup from cloud storage"""
+    data = request.get_json()
+    remote_name = data.get('remote_name')
+    remote_file_path = data.get('remote_file_path')
+    
+    if not remote_name or not remote_file_path:
+        return jsonify({'error': 'Remote name and file path are required'}), 400
+    
+    try:
+        cloud_service = CloudBackupService()
+        success, message = cloud_service.delete_cloud_backup(remote_name, remote_file_path)
+        
+        return jsonify({
+            'success': success,
+            'message': message
+        }), 200 if success else 500
+        
+    except Exception as e:
+        current_app.logger.error(f"Cloud delete error: {str(e)}")
+        return jsonify({'error': f'Delete failed: {str(e)}'}), 500
+
+@backup_bp.route('/cloud/list-remotes', methods=['GET'])
+def list_cloud_remotes():
+    """List configured rclone remotes"""
+    try:
+        cloud_service = CloudBackupService()
+        remotes = cloud_service.list_configured_remotes()
+        
+        return jsonify({
+            'success': True,
+            'remotes': remotes,
+            'rclone_available': cloud_service.check_rclone_available()
+        }), 200
+        
+    except Exception as e:
+        current_app.logger.error(f"Error listing remotes: {str(e)}")
+        return jsonify({'error': f'Failed to list remotes: {str(e)}'}), 500
+
+@backup_bp.route('/cloud/storage-usage/<remote_name>', methods=['GET'])
+def get_storage_usage(remote_name):
+    """Get storage usage for a remote"""
+    try:
+        cloud_service = CloudBackupService()
+        usage_info = cloud_service.get_storage_usage(remote_name)
+        
+        return jsonify({
+            'success': True,
+            'usage': usage_info
+        }), 200
+        
+    except Exception as e:
+        current_app.logger.error(f"Error getting storage usage: {str(e)}")
+        return jsonify({'error': f'Failed to get storage usage: {str(e)}'}), 500
 
 def create_manifest_data():
     """Create manifest data as a JSON string"""

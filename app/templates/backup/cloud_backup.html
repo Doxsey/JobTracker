@@ -1,0 +1,584 @@
+{% extends "base.html" %}
+{% block title %}Cloud Backup{% endblock %}
+{% block content %}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Cloud Backup Management</h2>
+                <a href="{{ url_for('backup.index') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>Back to Backup
+                </a>
+            </div>
+
+            <!-- rclone Status -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    {% if rclone_available %}
+
+                    <div class="card border-success p-3 mb-3">
+                        <div class="col-12">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <i class="bi bi-cloud-check-fill text-success" style="font-size: 2rem;"></i>
+                                </div>
+                                <div class="col">
+                                    <div class="fw-bold text-success">Cloud Backup Available</div>
+                                    <small class="text-muted">rclone is configured and ready for use</small>
+                                </div>
+                                <div class="col-auto">
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-check-circle me-1"></i>Active
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% else %}
+
+                    <div class="card border-warning p-3 mb-3">
+                        <div class="col-12">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <i class="bi bi-exclamation-triangle-fill text-warning"
+                                        style="font-size: 2rem;"></i>
+                                </div>
+                                <div class="col">
+                                    <div class="fw-bold text-warning">rclone not found</div>
+                                    <small class="text-muted">Please install rclone to use cloud backup features</small>
+                                </div>
+                                <div class="col-auto">
+                                    <small class="mt-2 d-block">Visit <a href="https://rclone.org/downloads/"
+                                            target="_blank">rclone.org</a> to download and install rclone</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if rclone_available %}
+            <!-- Configured Remotes -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-cloud me-2"></i>
+                                Configured Cloud Storage Remotes
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if remotes %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Remote Name</th>
+                                            <th>Type</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for remote in remotes %}
+                                        <tr>
+                                            <td><strong>{{ remote.name }}</strong></td>
+                                            <td>
+                                                <span class="badge bg-secondary">{{ remote.type }}</span>
+                                            </td>
+                                            <td>
+                                                <span class="connection-status" data-remote="{{ remote.name }}">
+                                                    <span class="spinner-border spinner-border-sm me-2"
+                                                        role="status"></span>
+                                                    Testing...
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <button type="button"
+                                                        class="btn btn-sm btn-primary test-connection-btn"
+                                                        data-remote="{{ remote.name }}">
+                                                        <i class="bi bi-wifi me-1"></i>Test
+                                                    </button>
+                                                    <button type="button"
+                                                        class="btn btn-sm btn-success upload-backup-btn"
+                                                        data-remote="{{ remote.name }}">
+                                                        <i class="bi bi-cloud-upload me-1"></i>Upload
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-info view-usage-btn"
+                                                        data-remote="{{ remote.name }}">
+                                                        <i class="bi bi-pie-chart me-1"></i>Usage
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="bi bi-cloud-slash text-muted" style="font-size: 3rem;"></i>
+                                <h5 class="text-muted mt-3">No cloud remotes configured</h5>
+                                <p class="text-muted">
+                                    Configure rclone remotes to enable cloud backup functionality.<br>
+                                    Run <code>rclone config</code> in your terminal to set up cloud storage
+                                    providers.
+                                </p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cloud Backups -->
+            {% if remotes and cloud_backups %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-archive me-2"></i>
+                                Existing Cloud Backups
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% for remote_name, backups in cloud_backups.items() %}
+                            {% if backups %}
+                            <h6 class="text-primary mt-3 mb-3">
+                                <i class="bi bi-cloud me-1"></i>{{ remote_name }}
+                            </h6>
+                            <div class="table-responsive mb-4">
+                                <table class="table table-sm table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Backup Name</th>
+                                            <th>Size</th>
+                                            <th>Date</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for backup in backups %}
+                                        <tr>
+                                            <td>
+                                                <i class="bi bi-file-earmark-zip me-1"></i>
+                                                {{ backup.name }}
+                                                {% if backup.detection_method != 'standard_pattern' %}
+                                                <br><small class="text-muted">
+                                                    Detected by: {{ backup.detection_method.replace('_', '
+                                                    ').title() }}
+                                                </small>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ backup.size_mb }} MB</td>
+                                            <td>{{ backup.modified[:19] | replace('T', ' ') }}</td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <button type="button"
+                                                        class="btn btn-sm btn-primary download-backup-btn"
+                                                        data-remote="{{ backup.remote }}" data-path="{{ backup.path }}">
+                                                        <i class="bi bi-download me-1"></i>Download
+                                                    </button>
+                                                    <button type="button"
+                                                        class="btn btn-sm btn-danger delete-backup-btn"
+                                                        data-remote="{{ backup.remote }}" data-path="{{ backup.path }}"
+                                                        data-name="{{ backup.name }}">
+                                                        <i class="bi bi-trash me-1"></i>Delete
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Upload Backup Modal -->
+<div class="modal fade" id="uploadBackupModal" tabindex="-1" aria-labelledby="uploadBackupModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uploadBackupModalLabel">Upload Backup to Cloud</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="uploadBackupForm">
+                    <div class="mb-3">
+                        <label for="uploadRemote" class="form-label">Remote Storage</label>
+                        <input type="text" class="form-control" id="uploadRemote" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="customPath" class="form-label mb-1">Custom Path (Optional)</label>
+                        <input type="text" class="form-control" id="customPath"
+                            placeholder="{{ cloud_backup_path }}/YYYY/MM/DD/">
+                        <small class="form-text text-muted">
+                            Leave empty for default
+                        </small>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="createNewBackup" checked>
+                            <label class="form-check-label" for="createNewBackup">
+                                Create new backup before upload
+                            </label>
+                        </div>
+                        <small class="form-text text-muted">
+                            This will create a fresh backup of your current data and upload it to the cloud.
+                        </small>
+                    </div>
+                </form>
+
+                <!-- Progress indicator -->
+                <div id="uploadProgress" class="mt-3" style="display: none;">
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+                            style="width: 100%"></div>
+                    </div>
+                    <p class="mt-2 text-center">Creating backup and uploading to cloud...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmUploadBtn">
+                    <i class="bi bi-cloud-upload me-2"></i>Upload Backup
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Storage Usage Modal -->
+<div class="modal fade" id="storageUsageModal" tabindex="-1" aria-labelledby="storageUsageModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="storageUsageModalLabel">Storage Usage</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="storageUsageContent">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading storage usage information...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alert container for messages -->
+<div id="alertContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 1055"></div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Test all connections on page load
+        document.querySelectorAll('.connection-status').forEach(status => {
+            const remoteName = status.dataset.remote;
+            testConnection(remoteName);
+        });
+
+        // Test connection button handlers
+        document.querySelectorAll('.test-connection-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const remoteName = this.dataset.remote;
+                testConnection(remoteName);
+            });
+        });
+
+        // Upload backup button handlers
+        document.querySelectorAll('.upload-backup-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const remoteName = this.dataset.remote;
+                showUploadModal(remoteName);
+            });
+        });
+
+        // View usage button handlers
+        document.querySelectorAll('.view-usage-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const remoteName = this.dataset.remote;
+                showStorageUsage(remoteName);
+            });
+        });
+
+        // Download backup button handlers
+        document.querySelectorAll('.download-backup-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const remoteName = this.dataset.remote;
+                const remotePath = this.dataset.path;
+                downloadBackup(remoteName, remotePath);
+            });
+        });
+
+        // Delete backup button handlers
+        document.querySelectorAll('.delete-backup-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const remoteName = this.dataset.remote;
+                const remotePath = this.dataset.path;
+                const backupName = this.dataset.name;
+
+                if (confirm(`Are you sure you want to delete backup "${backupName}" from ${remoteName}?`)) {
+                    deleteBackup(remoteName, remotePath);
+                }
+            });
+        });
+
+        // Upload confirmation handler
+        document.getElementById('confirmUploadBtn').addEventListener('click', function () {
+            const remoteName = document.getElementById('uploadRemote').value;
+            const customPath = document.getElementById('customPath').value;
+            const createNew = document.getElementById('createNewBackup').checked;
+
+            uploadBackup(remoteName, customPath, createNew);
+        });
+
+        // Functions
+        function testConnection(remoteName) {
+            const statusElement = document.querySelector(`[data-remote="${remoteName}"]`);
+
+            statusElement.innerHTML = `
+            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+            Testing...
+        `;
+
+            fetch('{{ url_for("backup.test_cloud_connection") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ remote_name: remoteName })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        statusElement.innerHTML = `
+                    <span class="badge bg-success">
+                        <i class="bi bi-check-circle me-1"></i>Connected
+                    </span>
+                `;
+                    } else {
+                        statusElement.innerHTML = `
+                    <span class="badge bg-danger" title="${data.message}">
+                        <i class="bi bi-x-circle me-1"></i>Failed
+                    </span>
+                `;
+                    }
+                })
+                .catch(error => {
+                    statusElement.innerHTML = `
+                <span class="badge bg-warning">
+                    <i class="bi bi-exclamation-triangle me-1"></i>Error
+                </span>
+            `;
+                });
+        }
+
+        function showUploadModal(remoteName) {
+            document.getElementById('uploadRemote').value = remoteName;
+            document.getElementById('customPath').value = '';
+            document.getElementById('createNewBackup').checked = true;
+
+            const modal = new bootstrap.Modal(document.getElementById('uploadBackupModal'));
+            modal.show();
+        }
+
+        function uploadBackup(remoteName, customPath, createNew) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('uploadBackupModal'));
+            const progressDiv = document.getElementById('uploadProgress');
+            const confirmBtn = document.getElementById('confirmUploadBtn');
+            // Show progress and disable button
+            progressDiv.style.display = 'block';
+            confirmBtn.disabled = true;
+
+            fetch('{{ url_for("backup.upload_to_cloud") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    remote_name: remoteName,
+                    custom_path: customPath || null,
+                    create_new_backup: createNew
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('Success!', data.message, 'success');
+                        modal.hide();
+                        // Reload page to show new backup
+                        setTimeout(() => location.reload(), 2000);
+                    } else {
+                        showAlert('Error!', data.error, 'danger');
+                    }
+                })
+                .catch(error => {
+                    showAlert('Error!', 'Upload failed: ' + error.message, 'danger');
+                })
+                .finally(() => {
+                    progressDiv.style.display = 'none';
+                    confirmBtn.disabled = false;
+                });
+        }
+
+        function downloadBackup(remoteName, remotePath) {
+            showAlert('Info', 'Starting download...', 'info');
+
+            fetch('{{ url_for("backup.download_from_cloud") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    remote_name: remoteName,
+                    remote_file_path: remotePath
+                })
+            })
+                .then(response => {
+                    if (response.ok) {
+                        return response.blob();
+                    } else {
+                        return response.json().then(data => {
+                            throw new Error(data.error || 'Download failed');
+                        });
+                    }
+                })
+                .then(blob => {
+                    // Create download link
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = remotePath.split('/').pop();
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+
+                    showAlert('Success!', 'Backup downloaded successfully', 'success');
+                })
+                .catch(error => {
+                    showAlert('Error!', 'Download failed: ' + error.message, 'danger');
+                });
+        }
+
+        function deleteBackup(remoteName, remotePath) {
+            fetch('{{ url_for("backup.delete_cloud_backup") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    remote_name: remoteName,
+                    remote_file_path: remotePath
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('Success!', 'Backup deleted successfully', 'success');
+                        // Reload page to update list
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showAlert('Error!', data.error, 'danger');
+                    }
+                })
+                .catch(error => {
+                    showAlert('Error!', 'Delete failed: ' + error.message, 'danger');
+                });
+        }
+
+        function showStorageUsage(remoteName) {
+            const modal = new bootstrap.Modal(document.getElementById('storageUsageModal'));
+            const contentDiv = document.getElementById('storageUsageContent');
+
+            // Show loading state
+            contentDiv.innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading storage usage information...</p>
+            </div>
+        `;
+
+            modal.show();
+
+            fetch(`{{ url_for("backup.get_storage_usage", remote_name="") }}${remoteName}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.usage) {
+                        let usageHtml = `<h6>Storage Usage for ${remoteName}:</h6><ul class="list-group list-group-flush">`;
+
+                        for (const [key, value] of Object.entries(data.usage)) {
+                            usageHtml += `<li class="list-group-item d-flex justify-content-between">
+                        <span>${key}:</span><span><strong>${value}</strong></span>
+                    </li>`;
+                        }
+                        usageHtml += '</ul>';
+
+                        contentDiv.innerHTML = usageHtml;
+                    } else {
+                        contentDiv.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Storage usage information not available for this remote.
+                    </div>
+                `;
+                    }
+                })
+                .catch(error => {
+                    contentDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-x-circle me-2"></i>
+                    Error loading storage usage: ${error.message}
+                </div>
+            `;
+                });
+        }
+
+        function showAlert(title, message, type = 'info') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+            <strong>${title}</strong> ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+            alertContainer.appendChild(alertDiv);
+
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+    });
+</script>
+
+{% endblock %}
