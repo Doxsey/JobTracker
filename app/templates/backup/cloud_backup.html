@@ -139,6 +139,11 @@
                                             <td>
                                                 <i class="bi bi-file-earmark-zip me-1"></i>
                                                 {{ backup.name }}
+                                                {% if backup.detection_method != 'standard_pattern' %}
+                                                <br><small class="text-muted">
+                                                    Detected by: {{ backup.detection_method.replace('_', ' ').title() }}
+                                                </small>
+                                                {% endif %}
                                             </td>
                                             <td>{{ backup.size_mb }} MB</td>
                                             <td>{{ backup.modified[:19] | replace('T', ' ') }}</td>
@@ -192,7 +197,7 @@
                     <div class="mb-3">
                         <label for="customPath" class="form-label">Custom Path (Optional)</label>
                         <input type="text" class="form-control" id="customPath"
-                            placeholder="Leave empty for default: job-tracker-backups/YYYY/MM/DD/">
+                            placeholder="Leave empty for default: {{ cloud_backup_path }}/YYYY/MM/DD/">
                         <small class="form-text text-muted">
                             Specify a custom path on the remote storage.
                         </small>
@@ -375,7 +380,6 @@
             const modal = bootstrap.Modal.getInstance(document.getElementById('uploadBackupModal'));
             const progressDiv = document.getElementById('uploadProgress');
             const confirmBtn = document.getElementById('confirmUploadBtn');
-
             // Show progress and disable button
             progressDiv.style.display = 'block';
             confirmBtn.disabled = true;

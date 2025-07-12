@@ -26,7 +26,6 @@ class CloudBackupService:
         for name in possible_names:
             executable = shutil.which(name)
             if executable:
-                print(f"Found rclone at: {executable}")
                 return executable
         
         # If not found with shutil.which, try common Windows locations
@@ -39,13 +38,11 @@ class CloudBackupService:
         
         for path in common_paths:
             if os.path.exists(path):
-                print(f"Found rclone at: {path}")
                 return path
         
         # Check if RCLONE_PATH is set in environment variables
         rclone_path = os.environ.get('RCLONE_PATH')
         if rclone_path and os.path.exists(rclone_path):
-            print(f"Found rclone via RCLONE_PATH: {rclone_path}")
             return rclone_path
         
         # Fallback to just 'rclone' and let it fail with a better error message
@@ -54,10 +51,6 @@ class CloudBackupService:
     
     def check_rclone_available(self) -> bool:
         """Check if rclone is available in the system"""
-        print("Checking if rclone is available...")
-        print(f"Using rclone executable: {self.rclone_executable}")
-        print(f"Current PATH: {os.environ.get('PATH', 'Not found')}")
-        
         try:
             # Use shell=True on Windows to help with PATH resolution
             import platform
@@ -70,8 +63,6 @@ class CloudBackupService:
                 timeout=10,
                 shell=use_shell
             )
-            print(f"rclone version check result: returncode={result.returncode}")
-            print(f"stdout: {result.stdout[:200]}...")  # First 200 chars
             if result.stderr:
                 print(f"stderr: {result.stderr}")
             return result.returncode == 0
@@ -81,9 +72,6 @@ class CloudBackupService:
             
             # Additional debugging for Windows
             if platform.system() == 'Windows':
-                print("Windows-specific debugging:")
-                print(f"Trying to find rclone.exe specifically...")
-                
                 # Try with .exe extension explicitly
                 try:
                     result = subprocess.run(
@@ -116,8 +104,6 @@ class CloudBackupService:
         # Use shell=True on Windows for better compatibility
         use_shell = platform.system() == 'Windows'
         
-        print(f"Running command: {' '.join(cmd)}")
-        
         return subprocess.run(
             cmd, 
             capture_output=True, 
@@ -133,9 +119,6 @@ class CloudBackupService:
         
         try:
             result = self._run_rclone_command(['listremotes'])
-            print(f"listremotes result: returncode={result.returncode}")
-            print(f"stdout: {result.stdout[:200]}...")  # First 200
-            
             if result.returncode == 0:
                 remotes = []
                 for line in result.stdout.strip().split('\n'):
@@ -251,40 +234,141 @@ class CloudBackupService:
         except Exception:
             return {}
     
-    def list_cloud_backups(self, remote_name: str, 
-                          custom_path: Optional[str] = None) -> List[Dict]:
-        """List backups stored in cloud"""
+    def list_cloud_backups(self, remote_name: str, custom_path: Optional[str] = None) -> List[Dict]:
+        """List backups stored in cloud with improved detection"""
+        print(f"=== DEBUG: list_cloud_backups called ===")
+        print(f"Remote name: {remote_name}")
+        print(f"Custom path: {custom_path}")
+        print(f"Backup path: {self.backup_path}")
+        
         if not self.check_rclone_available():
+            print("rclone not available")
             return []
         
         try:
             search_path = f"{remote_name}:{custom_path or self.backup_path}"
+            print(f"Search path: {search_path}")
+            
             result = self._run_rclone_command(['lsjson', search_path, '--recursive'], timeout=60)
             
+            print(f"rclone lsjson result:")
+            print(f"  Return code: {result.returncode}")
+            print(f"  Stdout length: {len(result.stdout)}")
+            print(f"  Stderr: {result.stderr}")
+            
+            if result.stdout:
+                print(f"  First 500 chars of stdout: {result.stdout[:500]}")
+            
             if result.returncode == 0:
-                files = json.loads(result.stdout)
-                backups = []
-                
-                for file_info in files:
-                    if (file_info.get('Name', '').endswith('.zip') and 
-                        'job_tracker_backup_' in file_info.get('Name', '')):
-                        backups.append({
-                            'name': file_info.get('Name'),
-                            'path': file_info.get('Path'),
-                            'size': file_info.get('Size', 0),
-                            'size_mb': round(file_info.get('Size', 0) / (1024 * 1024), 2),
-                            'modified': file_info.get('ModTime', ''),
-                            'remote': remote_name
-                        })
-                
-                # Sort by modification time (newest first)
-                backups.sort(key=lambda x: x['modified'], reverse=True)
-                return backups
-            return []
+                try:
+                    files = json.loads(result.stdout)
+                    print(f"  Parsed {len(files)} files from JSON")
+                    
+                    # Debug: show all files found
+                    for i, file_info in enumerate(files[:10]):  # Show first 10 files
+                        print(f"  File {i}: {file_info.get('Name', 'NO_NAME')} - Path: {file_info.get('Path', 'NO_PATH')}")
+                    
+                    backups = []
+                    
+                    for file_info in files:
+                        filename = file_info.get('Name', '')
+                        filepath = file_info.get('Path', '')
+                        
+                        # Skip directories
+                        if file_info.get('IsDir', False):
+                            continue
+                        
+                        print(f"  Checking file: {filename}")
+                        
+                        # More flexible matching for backup files
+                        is_zip = filename.endswith('.zip')
+                        
+                        # Check multiple patterns to identify backup files
+                        is_backup = any([
+                            'job_tracker_backup_' in filename,  # Standard pattern
+                            filename.startswith('job_tracker_'),  # Alternative pattern
+                            self._is_likely_backup_file(file_info, filename),  # Heuristic check
+                        ])
+                        
+                        print(f"    Is ZIP: {is_zip}, Is backup: {is_backup}")
+                        
+                        if is_zip and is_backup:
+                            print(f"    ✓ MATCH: Adding {filename} to backups")
+                            backups.append({
+                                'name': filename,
+                                'path': filepath,
+                                'size': file_info.get('Size', 0),
+                                'size_mb': round(file_info.get('Size', 0) / (1024 * 1024), 2),
+                                'modified': file_info.get('ModTime', ''),
+                                'remote': remote_name,
+                                'detection_method': self._get_detection_method(filename)
+                            })
+                        else:
+                            print(f"    ✗ SKIP: {filename}")
+                    
+                    print(f"  Found {len(backups)} matching backup files")
+                    
+                    # Sort by modification time (newest first)
+                    backups.sort(key=lambda x: x['modified'], reverse=True)
+                    return backups
+                except json.JSONDecodeError as e:
+                    print(f"JSON decode error: {e}")
+                    print(f"Raw stdout: {result.stdout}")
+                    return []
+            else:
+                print(f"rclone command failed with return code {result.returncode}")
+                print(f"Error output: {result.stderr}")
+                return []
         except Exception as e:
+            print(f"Exception in list_cloud_backups: {e}")
             current_app.logger.error(f"Error listing cloud backups: {str(e)}")
             return []
     
+    def _is_likely_backup_file(self, file_info: Dict, filename: str) -> bool:
+        """Use heuristics to identify backup files"""
+        # Check if it contains manifest.json (for existing backups)
+        # This would require downloading and checking, so let's use other heuristics
+        
+        # Size-based heuristic: backup files are usually larger than 1KB
+        size = file_info.get('Size', 0)
+        if size < 1024:  # Less than 1KB, probably not a backup
+            return False
+        
+        # Path-based heuristic: in a date-structured folder
+        path = file_info.get('Path', '')
+        date_pattern_in_path = any([
+            '/2024/' in path or '/2025/' in path,  # Year in path
+            path.count('/') >= 2,  # Deep path structure (year/month/day)
+        ])
+        
+        # Filename-based heuristic: looks like a backup
+        filename_hints = any([
+            'backup' in filename.lower(),
+            'job' in filename.lower(),
+            'tracker' in filename.lower(),
+            len(filename) > 10,  # Reasonably long filename
+        ])
+        
+        print(f"    Heuristic check for {filename}:")
+        print(f"      Size > 1KB: {size >= 1024} ({size} bytes)")
+        print(f"      Date pattern: {date_pattern_in_path}")
+        print(f"      Filename hints: {filename_hints}")
+        
+        # Consider it a backup if it meets size + (date pattern OR filename hints)
+        is_likely = size >= 1024 and (date_pattern_in_path or filename_hints)
+        print(f"      Result: {is_likely}")
+        
+        return is_likely
+
+    def _get_detection_method(self, filename: str) -> str:
+        """Return how the backup was detected"""
+        if 'job_tracker_backup_' in filename:
+            return 'standard_pattern'
+        elif filename.startswith('job_tracker_'):
+            return 'alternative_pattern'
+        else:
+            return 'heuristic_detection'
+
     def download_backup(self, remote_name: str, remote_file_path: str, 
                        local_download_path: str) -> Tuple[bool, str]:
         """Download backup from cloud storage"""

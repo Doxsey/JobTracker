@@ -87,24 +87,40 @@ def export_data_stream():
 @backup_bp.route('/cloud', methods=['GET'])
 def cloud_backup_page():
     """Cloud backup management page"""
+    print("=== DEBUG: Cloud backup page accessed ===")
+    
     cloud_service = CloudBackupService()
     
     # Check if rclone is available
     rclone_available = cloud_service.check_rclone_available()
+    print(f"rclone available: {rclone_available}")
     
     # Get configured remotes
     remotes = cloud_service.list_configured_remotes() if rclone_available else []
+    print(f"Found {len(remotes)} remotes: {[r['name'] for r in remotes]}")
     
     # Get cloud backups for each remote
     cloud_backups = {}
     if rclone_available:
         for remote in remotes:
+            print(f"\n--- Checking backups for remote: {remote['name']} ---")
             try:
                 backups = cloud_service.list_cloud_backups(remote['name'])
                 cloud_backups[remote['name']] = backups
+                print(f"Found {len(backups)} backups for {remote['name']}")
+                
+                # Debug: show backup details
+                for backup in backups:
+                    print(f"  - {backup['name']} ({backup['size_mb']} MB)")
+                    
             except Exception as e:
+                print(f"Error listing backups for {remote['name']}: {str(e)}")
                 current_app.logger.error(f"Error listing backups for {remote['name']}: {str(e)}")
                 cloud_backups[remote['name']] = []
+    
+    print(f"\nFinal cloud_backups dict: {list(cloud_backups.keys())}")
+    for remote_name, backups in cloud_backups.items():
+        print(f"  {remote_name}: {len(backups)} backups")
     
     return render_template('backup/cloud_backup.html',
                          rclone_available=rclone_available,
@@ -149,14 +165,17 @@ def upload_to_cloud():
         
         # Create backup file
         if create_new_backup:
-            # Create a temporary backup file
+            # Create a proper backup filename (not temporary)
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             backup_filename = f'job_tracker_backup_{timestamp}.zip'
             
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.zip') as temp_file:
-                temp_backup_path = temp_file.name
+            # Create backup in a temporary location but with proper name
+            temp_dir = tempfile.mkdtemp()
+            temp_backup_path = os.path.join(temp_dir, backup_filename)
             
             try:
+                print(f"Creating backup at: {temp_backup_path}")
+                
                 # Create backup using existing backup logic
                 with zipfile.ZipFile(temp_backup_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
                     # Add database backup
@@ -187,28 +206,40 @@ def upload_to_cloud():
                     manifest = create_manifest_data()
                     zipf.writestr('manifest.json', manifest)
                 
-                # Upload to cloud
+                print(f"Backup created successfully: {backup_filename}")
+                print(f"File size: {os.path.getsize(temp_backup_path)} bytes")
+                
+                # Upload to cloud with the proper filename
                 success, message, file_info = cloud_service.upload_backup(
                     temp_backup_path, remote_name, custom_path
                 )
                 
+                if success:
+                    print(f"Upload successful: {message}")
+                else:
+                    print(f"Upload failed: {message}")
+                
                 return jsonify({
                     'success': success,
                     'message': message,
-                    'file_info': file_info
+                    'file_info': file_info,
+                    'backup_filename': backup_filename  # Include the filename in response
                 }), 200 if success else 500
                 
             finally:
-                # Clean up temporary backup file
+                # Clean up temporary directory and all files in it
                 try:
-                    os.unlink(temp_backup_path)
-                except:
-                    pass
+                    import shutil
+                    shutil.rmtree(temp_dir)
+                    print(f"Cleaned up temporary directory: {temp_dir}")
+                except Exception as e:
+                    print(f"Error cleaning up temp directory: {e}")
         else:
             return jsonify({'error': 'Existing backup upload not implemented yet'}), 400
             
     except Exception as e:
         current_app.logger.error(f"Cloud upload error: {str(e)}")
+        print(f"Exception in upload_to_cloud: {str(e)}")
         return jsonify({'error': f'Upload failed: {str(e)}'}), 500
 
 @backup_bp.route('/cloud/download', methods=['POST'])
