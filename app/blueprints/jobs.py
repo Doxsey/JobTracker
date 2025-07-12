@@ -2,8 +2,8 @@ from datetime import date
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from app import db
 from flask_wtf import FlaskForm
-from wtforms import DateField, StringField, BooleanField, SubmitField, TextAreaField, DecimalField
-from flask_wtf.file import FileField, FileRequired, FileAllowed
+from wtforms import DateField, StringField, BooleanField, SubmitField, TextAreaField, IntegerField
+from flask_wtf.file import FileField, FileAllowed
 from wtforms.validators import DataRequired, Optional
 from werkzeug.utils import secure_filename
 from app.models import Job, Settings
@@ -18,10 +18,10 @@ jobs_bp = Blueprint('jobs', __name__)
 class NewJobForm(FlaskForm):
     company = StringField('Company', validators=[DataRequired()])
     title = StringField('Title', validators=[DataRequired()])
-    description = TextAreaField('Description', validators=[DataRequired()])
+    description = TextAreaField('Description', validators=[Optional()])
     location = StringField('Location', validators=[DataRequired()])
-    salary_range_low = DecimalField('Salary Range Low')
-    salary_range_high = DecimalField('Salary Range High')
+    salary_range_low = IntegerField('Salary Range Low', validators=[Optional()], render_kw={"type": "number", "step": "1"})
+    salary_range_high = IntegerField('Salary Range High', validators=[Optional()], render_kw={"type": "number", "step": "1"})
     remote_option = StringField('Remote Option')
     posting_id = StringField('Posting ID')
     referrer = StringField('Referrer')
@@ -50,8 +50,8 @@ class ViewJobForm(FlaskForm):
     title = StringField('Title', validators=[DataRequired()])
     description = TextAreaField('Description', validators=[DataRequired()])
     location = StringField('Location', validators=[DataRequired()])
-    salary_range_low = DecimalField('Salary Range Low')
-    salary_range_high = DecimalField('Salary Range High')
+    salary_range_low = IntegerField('Salary Range Low', validators=[Optional()], render_kw={"type": "number", "step": "1"})
+    salary_range_high = IntegerField('Salary Range High', validators=[Optional()], render_kw={"type": "number", "step": "1"})
     remote_option = StringField('Remote Option')
     posting_id = StringField('Posting ID')
     referrer = StringField('Referrer')
