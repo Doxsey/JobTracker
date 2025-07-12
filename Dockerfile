@@ -7,11 +7,23 @@ ENV PYTHONUNBUFFERED=1
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies including rclone
 RUN apt-get update && apt-get install -y \
     gcc \
     curl \
+    unzip \
     && rm -rf /var/lib/apt/lists/*
+
+# Install rclone
+RUN curl -O https://downloads.rclone.org/rclone-current-linux-amd64.zip \
+    && unzip rclone-current-linux-amd64.zip \
+    && cd rclone-*-linux-amd64 \
+    && cp rclone /usr/bin/ \
+    && chown root:root /usr/bin/rclone \
+    && chmod 755 /usr/bin/rclone \
+    && cd .. \
+    && rm -rf rclone-* \
+    && rm rclone-current-linux-amd64.zip
 
 # Copy requirements first for better caching
 COPY requirements.txt .

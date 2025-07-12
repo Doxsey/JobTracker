@@ -1,5 +1,4 @@
-# app/services/__init__.py
 from .api_service import APIService
-from .github_service import GitHubService
+from .cloud_backup_service import CloudBackupService
 
-__all__ = ['APIService', 'GitHubService']
+__all__ = ['APIService', 'GitHubService', 'CloudBackupService']
