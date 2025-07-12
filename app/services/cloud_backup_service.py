@@ -234,51 +234,30 @@ class CloudBackupService:
         except Exception:
             return {}
     
-    def list_cloud_backups(self, remote_name: str, custom_path: Optional[str] = None) -> List[Dict]:
-        """List backups stored in cloud with improved detection"""
-        print(f"=== DEBUG: list_cloud_backups called ===")
-        print(f"Remote name: {remote_name}")
-        print(f"Custom path: {custom_path}")
-        print(f"Backup path: {self.backup_path}")
-        
+    def list_cloud_backups(self, remote_name: str, 
+                      custom_path: Optional[str] = None) -> List[Dict]:
+        """List backups stored in cloud with improved path handling"""
         if not self.check_rclone_available():
-            print("rclone not available")
             return []
         
         try:
             search_path = f"{remote_name}:{custom_path or self.backup_path}"
-            print(f"Search path: {search_path}")
+            backup_base_path = custom_path or self.backup_path
             
             result = self._run_rclone_command(['lsjson', search_path, '--recursive'], timeout=60)
-            
-            print(f"rclone lsjson result:")
-            print(f"  Return code: {result.returncode}")
-            print(f"  Stdout length: {len(result.stdout)}")
-            print(f"  Stderr: {result.stderr}")
-            
-            if result.stdout:
-                print(f"  First 500 chars of stdout: {result.stdout[:500]}")
             
             if result.returncode == 0:
                 try:
                     files = json.loads(result.stdout)
-                    print(f"  Parsed {len(files)} files from JSON")
-                    
-                    # Debug: show all files found
-                    for i, file_info in enumerate(files[:10]):  # Show first 10 files
-                        print(f"  File {i}: {file_info.get('Name', 'NO_NAME')} - Path: {file_info.get('Path', 'NO_PATH')}")
-                    
                     backups = []
                     
                     for file_info in files:
                         filename = file_info.get('Name', '')
-                        filepath = file_info.get('Path', '')
+                        relative_path = file_info.get('Path', '')
                         
                         # Skip directories
                         if file_info.get('IsDir', False):
                             continue
-                        
-                        print(f"  Checking file: {filename}")
                         
                         # More flexible matching for backup files
                         is_zip = filename.endswith('.zip')
@@ -290,30 +269,26 @@ class CloudBackupService:
                             self._is_likely_backup_file(file_info, filename),  # Heuristic check
                         ])
                         
-                        print(f"    Is ZIP: {is_zip}, Is backup: {is_backup}")
-                        
                         if is_zip and is_backup:
-                            print(f"    ✓ MATCH: Adding {filename} to backups")
+                            # Create full path for deletion
+                            full_path = f"{backup_base_path}/{relative_path}" if relative_path else f"{backup_base_path}/{filename}"
+                            
                             backups.append({
                                 'name': filename,
-                                'path': filepath,
+                                'path': full_path,  # Store full path including backup base
+                                'relative_path': relative_path,  # Store relative path for reference
                                 'size': file_info.get('Size', 0),
                                 'size_mb': round(file_info.get('Size', 0) / (1024 * 1024), 2),
                                 'modified': file_info.get('ModTime', ''),
                                 'remote': remote_name,
                                 'detection_method': self._get_detection_method(filename)
                             })
-                        else:
-                            print(f"    ✗ SKIP: {filename}")
-                    
-                    print(f"  Found {len(backups)} matching backup files")
                     
                     # Sort by modification time (newest first)
                     backups.sort(key=lambda x: x['modified'], reverse=True)
                     return backups
                 except json.JSONDecodeError as e:
                     print(f"JSON decode error: {e}")
-                    print(f"Raw stdout: {result.stdout}")
                     return []
             else:
                 print(f"rclone command failed with return code {result.returncode}")
@@ -349,14 +324,8 @@ class CloudBackupService:
             len(filename) > 10,  # Reasonably long filename
         ])
         
-        print(f"    Heuristic check for {filename}:")
-        print(f"      Size > 1KB: {size >= 1024} ({size} bytes)")
-        print(f"      Date pattern: {date_pattern_in_path}")
-        print(f"      Filename hints: {filename_hints}")
-        
         # Consider it a backup if it meets size + (date pattern OR filename hints)
         is_likely = size >= 1024 and (date_pattern_in_path or filename_hints)
-        print(f"      Result: {is_likely}")
         
         return is_likely
 
@@ -370,39 +339,97 @@ class CloudBackupService:
             return 'heuristic_detection'
 
     def download_backup(self, remote_name: str, remote_file_path: str, 
-                       local_download_path: str) -> Tuple[bool, str]:
+                   local_download_path: str) -> Tuple[bool, str]:
         """Download backup from cloud storage"""
         if not self.check_rclone_available():
             return False, "rclone is not available"
         
         try:
+            # Use the full path as provided (now includes backup base path)
             remote_path = f"{remote_name}:{remote_file_path}"
             
+            # Ensure local directory exists
+            local_dir = os.path.dirname(local_download_path)
+            os.makedirs(local_dir, exist_ok=True)
+            
+            # First, verify the file exists on remote
+            verify_result = self._run_rclone_command(['lsjson', remote_path], timeout=30)
+            
+            if verify_result.returncode == 0:
+                try:
+                    remote_files = json.loads(verify_result.stdout)
+                    if not remote_files:
+                        return False, f"File not found at {remote_path}"
+                except json.JSONDecodeError:
+                    pass
+            else:
+                print(f"Failed to verify remote file: {verify_result.stderr}")
+                return False, f"Could not verify remote file: {verify_result.stderr}"
+            
+            # Download the file
             result = self._run_rclone_command([
                 'copy', remote_path, 
-                os.path.dirname(local_download_path),
-                '--progress'
+                local_dir,
+                '--progress',
+                '--stats', '1s',
+                '--stats-one-line'
             ], timeout=300)
             
             if result.returncode == 0:
-                return True, f"Backup downloaded successfully to {local_download_path}"
+                # Verify the downloaded file
+                if os.path.exists(local_download_path):
+                    local_size = os.path.getsize(local_download_path)
+                    
+                    if local_size > 0:
+                        return True, f"Backup downloaded successfully to {local_download_path}"
+                    else:
+                        print("Downloaded file is 0 bytes!")
+                        return False, "Downloaded file is empty (0 bytes)"
+                else:
+                    # List what files were actually downloaded
+                    if os.path.exists(local_dir):
+                        downloaded_files = os.listdir(local_dir)
+                        
+                        # Maybe the filename is different, find any .zip files
+                        zip_files = [f for f in downloaded_files if f.endswith('.zip')]
+                        if zip_files:
+                            actual_file = os.path.join(local_dir, zip_files[0])
+                            actual_size = os.path.getsize(actual_file)
+                            
+                            # Rename to expected filename
+                            os.rename(actual_file, local_download_path)
+                            
+                            if actual_size > 0:
+                                return True, f"Backup downloaded successfully to {local_download_path}"
+                            else:
+                                return False, "Downloaded file is empty (0 bytes)"
+                    
+                    return False, "Downloaded file not found at expected location"
             else:
                 error_msg = result.stderr.strip() or "Download failed"
+                print(f"rclone copy failed: {error_msg}")
                 return False, error_msg
                 
         except subprocess.TimeoutExpired:
+            print("Download timeout (5 minutes)")
             return False, "Download timeout (5 minutes)"
         except Exception as e:
+            print(f"Exception in download_backup: {e}")
             return False, f"Download error: {str(e)}"
-    
-    def delete_cloud_backup(self, remote_name: str, 
-                           remote_file_path: str) -> Tuple[bool, str]:
+
+    def delete_cloud_backup(self, remote_name: str, remote_file_path: str) -> Tuple[bool, str]:
         """Delete backup from cloud storage"""
         if not self.check_rclone_available():
             return False, "rclone is not available"
         
         try:
-            remote_path = f"{remote_name}:{remote_file_path}"
+            # Check if the path already includes the backup folder
+            if remote_file_path.startswith(self.backup_path):
+                # Path already includes backup folder
+                remote_path = f"{remote_name}:{remote_file_path}"
+            else:
+                # Path is relative, need to add backup folder
+                remote_path = f"{remote_name}:{self.backup_path}/{remote_file_path}"
             
             result = self._run_rclone_command(['delete', remote_path], timeout=60)
             
@@ -410,9 +437,11 @@ class CloudBackupService:
                 return True, "Backup deleted successfully"
             else:
                 error_msg = result.stderr.strip() or "Delete failed"
+                print(f"Delete failed with error: {error_msg}")
                 return False, error_msg
-                
+            
         except Exception as e:
+            print(f"Exception in delete_cloud_backup: {e}")
             return False, f"Delete error: {str(e)}"
     
     def get_storage_usage(self, remote_name: str) -> Dict:

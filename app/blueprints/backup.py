@@ -87,8 +87,6 @@ def export_data_stream():
 @backup_bp.route('/cloud', methods=['GET'])
 def cloud_backup_page():
     """Cloud backup management page"""
-    print("=== DEBUG: Cloud backup page accessed ===")
-    
     cloud_service = CloudBackupService()
     
     # Check if rclone is available
@@ -125,7 +123,8 @@ def cloud_backup_page():
     return render_template('backup/cloud_backup.html',
                          rclone_available=rclone_available,
                          remotes=remotes,
-                         cloud_backups=cloud_backups)
+                         cloud_backups=cloud_backups,
+                         cloud_backup_path=cloud_service.backup_path)
 
 @backup_bp.route('/cloud/test-connection', methods=['POST'])
 def test_cloud_connection():
@@ -255,10 +254,16 @@ def download_from_cloud():
     try:
         cloud_service = CloudBackupService()
         
-        # Create temporary download location
+        # Create temporary download location with proper filename
         filename = os.path.basename(remote_file_path)
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.zip') as temp_file:
-            local_path = temp_file.name
+        print(f"Expected filename: {filename}")
+        
+        # Create a temporary directory
+        temp_dir = tempfile.mkdtemp()
+        local_path = os.path.join(temp_dir, filename)
+        
+        print(f"Temporary download path: {local_path}")
+        print(f"Temporary directory: {temp_dir}")
         
         try:
             # Download file
@@ -266,26 +271,57 @@ def download_from_cloud():
                 remote_name, remote_file_path, local_path
             )
             
-            if success:
+            print(f"Download result: success={success}, message={message}")
+            
+            if success and os.path.exists(local_path):
+                # Verify file size before sending
+                file_size = os.path.getsize(local_path)
+                print(f"File exists at {local_path}, size: {file_size} bytes")
+                
+                if file_size == 0:
+                    return jsonify({'error': 'Downloaded file is empty (0 bytes)'}), 500
+                
+                # Use a callback to clean up the temp file after sending
+                def remove_file(response):
+                    try:
+                        import shutil
+                        shutil.rmtree(temp_dir)
+                        print(f"Cleaned up temporary directory: {temp_dir}")
+                    except Exception as e:
+                        print(f"Error cleaning up temp directory: {e}")
+                    return response
+                
                 # Return file as download
-                return send_file(
+                response = send_file(
                     local_path,
                     as_attachment=True,
                     download_name=filename,
                     mimetype='application/zip'
                 )
-            else:
-                return jsonify({'error': message}), 500
                 
+                # Register cleanup callback
+                response.call_on_close(lambda: remove_file(response))
+                
+                return response
+            else:
+                return jsonify({'error': message or 'Download failed - file not found'}), 500
+                
+        except Exception as download_error:
+            print(f"Download exception: {download_error}")
+            return jsonify({'error': f'Download failed: {str(download_error)}'}), 500
         finally:
-            # Clean up temporary file
-            try:
-                os.unlink(local_path)
-            except:
-                pass
+            # Fallback cleanup - only if response wasn't sent successfully
+            if not success:
+                try:
+                    import shutil
+                    shutil.rmtree(temp_dir)
+                    print(f"Fallback cleanup of temporary directory: {temp_dir}")
+                except Exception as e:
+                    print(f"Error in fallback cleanup: {e}")
                 
     except Exception as e:
         current_app.logger.error(f"Cloud download error: {str(e)}")
+        print(f"Route exception: {str(e)}")
         return jsonify({'error': f'Download failed: {str(e)}'}), 500
 
 @backup_bp.route('/cloud/delete', methods=['POST'])
