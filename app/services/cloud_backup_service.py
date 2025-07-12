@@ -6,6 +6,8 @@ import shutil
 from datetime import datetime
 from flask import current_app
 from typing import Dict, List, Tuple, Optional
+import configparser
+from pathlib import Path
 
 
 class CloudBackupService:
@@ -48,6 +50,225 @@ class CloudBackupService:
         # Fallback to just 'rclone' and let it fail with a better error message
         print("rclone not found in common locations, falling back to 'rclone'")
         return 'rclone'
+    
+    def get_rclone_config_path(self) -> str:
+        """Get the path to the rclone config file"""
+        if self.rclone_config_path and os.path.exists(self.rclone_config_path):
+            return self.rclone_config_path
+        
+        # Try to detect the default rclone config path
+        import platform
+        
+        if platform.system() == 'Windows':
+            # Windows default path
+            config_path = os.path.expandvars(r'%APPDATA%\rclone\rclone.conf')
+        else:
+            # Unix-like systems (Linux, macOS)
+            # Check if we're running as a specific user in Docker
+            home_dir = os.path.expanduser('~')
+            if home_dir == '/home/appuser':
+                # Docker container with appuser
+                config_path = '/home/appuser/.config/rclone/rclone.conf'
+            else:
+                # Standard Unix path
+                config_path = os.path.join(home_dir, '.config', 'rclone', 'rclone.conf')
+        
+        return config_path
+    
+    def get_rclone_config_info(self) -> Dict:
+        """Get information about the rclone config file"""
+        config_path = self.get_rclone_config_path()
+        
+        info = {
+            'path': config_path,
+            'exists': os.path.exists(config_path),
+            'readable': False,
+            'writable': False,
+            'size': 0,
+            'remotes_count': 0,
+            'can_create': False
+        }
+        
+        if info['exists']:
+            try:
+                info['readable'] = os.access(config_path, os.R_OK)
+                info['writable'] = os.access(config_path, os.W_OK)
+                info['size'] = os.path.getsize(config_path)
+                
+                # Count remotes in config
+                if info['readable']:
+                    config = configparser.ConfigParser()
+                    config.read(config_path)
+                    info['remotes_count'] = len(config.sections())
+                    
+            except Exception as e:
+                print(f"Error checking config file: {e}")
+        else:
+            # Check if we can create the file
+            config_dir = os.path.dirname(config_path)
+            try:
+                # Check if directory exists or can be created
+                if os.path.exists(config_dir):
+                    info['can_create'] = os.access(config_dir, os.W_OK)
+                else:
+                    # Check if parent directory exists and is writable
+                    parent_dir = os.path.dirname(config_dir)
+                    info['can_create'] = os.path.exists(parent_dir) and os.access(parent_dir, os.W_OK)
+            except Exception as e:
+                print(f"Error checking if config can be created: {e}")
+                info['can_create'] = False
+        
+        return info
+    
+    def validate_config_section(self, config_text: str) -> Tuple[bool, str, Dict]:
+        """Validate a pasted rclone config section"""
+        if not config_text.strip():
+            return False, "Config text is empty", {}
+        
+        try:
+            # Parse the config section
+            config = configparser.ConfigParser()
+            config.read_string(config_text)
+            
+            sections = config.sections()
+            if not sections:
+                return False, "No valid config sections found", {}
+            
+            if len(sections) > 1:
+                return False, "Multiple sections found. Please paste one remote configuration at a time.", {}
+            
+            section_name = sections[0]
+            section_data = dict(config.items(section_name))
+            
+            # Basic validation
+            if 'type' not in section_data:
+                return False, f"Missing 'type' field in [{section_name}] section", {}
+            
+            provider_type = section_data['type']
+            
+            return True, f"Valid {provider_type} configuration for remote '{section_name}'", {
+                'name': section_name,
+                'type': provider_type,
+                'data': section_data
+            }
+            
+        except Exception as e:
+            return False, f"Invalid config format: {str(e)}", {}
+    
+    def create_config_file(self) -> Tuple[bool, str]:
+        """Create an empty rclone config file"""
+        config_path = self.get_rclone_config_path()
+        
+        try:
+            # Ensure the config directory exists
+            config_dir = os.path.dirname(config_path)
+            os.makedirs(config_dir, exist_ok=True)
+            
+            # Create empty config file with proper permissions
+            with open(config_path, 'w') as config_file:
+                config_file.write("# rclone configuration file\n")
+                config_file.write("# Created by Job Tracker application\n")
+                config_file.write("# Add your cloud storage configurations below\n\n")
+            
+            # Set appropriate permissions (readable/writable by owner only)
+            os.chmod(config_path, 0o600)
+            
+            return True, f"Config file created successfully at {config_path}"
+            
+        except Exception as e:
+            return False, f"Failed to create config file: {str(e)}"
+    
+    def append_config_section(self, config_text: str) -> Tuple[bool, str]:
+        """Append a config section to the rclone config file"""
+        # Validate the config first
+        is_valid, message, config_info = self.validate_config_section(config_text)
+        if not is_valid:
+            return False, message
+        
+        config_path = self.get_rclone_config_path()
+        remote_name = config_info['name']
+        
+        try:
+            # Ensure the config directory exists
+            config_dir = os.path.dirname(config_path)
+            os.makedirs(config_dir, exist_ok=True)
+            
+            # Create config file if it doesn't exist
+            if not os.path.exists(config_path):
+                success, create_message = self.create_config_file()
+                if not success:
+                    return False, f"Could not create config file: {create_message}"
+            
+            # Read existing config if it exists
+            existing_config = configparser.ConfigParser()
+            if os.path.exists(config_path):
+                existing_config.read(config_path)
+            
+            # Check if remote already exists
+            if remote_name in existing_config.sections():
+                return False, f"Remote '{remote_name}' already exists in config. Please remove it first or use a different name."
+            
+            # Parse the new config section
+            new_config = configparser.ConfigParser()
+            new_config.read_string(config_text)
+            
+            # Add the new section to existing config
+            for section_name in new_config.sections():
+                existing_config.add_section(section_name)
+                for key, value in new_config.items(section_name):
+                    existing_config.set(section_name, key, value)
+            
+            # Write the updated config back to file
+            with open(config_path, 'w') as config_file:
+                existing_config.write(config_file)
+            
+            # Set appropriate permissions
+            os.chmod(config_path, 0o600)
+            
+            return True, f"Successfully added remote '{remote_name}' to rclone config"
+            
+        except Exception as e:
+            return False, f"Error writing config: {str(e)}"
+    
+    def remove_remote_from_config(self, remote_name: str) -> Tuple[bool, str]:
+        """Remove a remote from the rclone config file"""
+        config_path = self.get_rclone_config_path()
+        
+        if not os.path.exists(config_path):
+            return False, "Config file does not exist"
+        
+        try:
+            config = configparser.ConfigParser()
+            config.read(config_path)
+            
+            if remote_name not in config.sections():
+                return False, f"Remote '{remote_name}' not found in config"
+            
+            # Remove the section
+            config.remove_section(remote_name)
+            
+            # Write the updated config back
+            with open(config_path, 'w') as config_file:
+                config.write(config_file)
+            
+            return True, f"Successfully removed remote '{remote_name}' from config"
+            
+        except Exception as e:
+            return False, f"Error removing remote: {str(e)}"
+    
+    def get_config_content(self) -> Tuple[bool, str]:
+        """Get the current rclone config file content"""
+        config_path = self.get_rclone_config_path()
+        
+        if not os.path.exists(config_path):
+            return False, "Config file does not exist"
+        
+        try:
+            with open(config_path, 'r') as config_file:
+                content = config_file.read()
+            return True, content
+        except Exception as e:
+            return False, f"Error reading config: {str(e)}"
     
     def check_rclone_available(self) -> bool:
         """Check if rclone is available in the system"""
@@ -171,6 +392,7 @@ class CloudBackupService:
         except Exception as e:
             return False, f"Error testing connection: {str(e)}"
     
+    # ... (rest of the existing methods remain the same)
     def upload_backup(self, backup_file_path: str, remote_name: str, 
                      custom_path: Optional[str] = None) -> Tuple[bool, str, Dict]:
         """Upload backup file to cloud storage"""

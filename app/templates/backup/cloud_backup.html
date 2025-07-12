@@ -61,6 +61,85 @@
             </div>
 
             {% if rclone_available %}
+            <!-- rclone Configuration Management -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-gear me-2"></i>
+                                rclone Configuration Management
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <strong>Config File Status:</strong>
+                                        <span id="config-status" class="ms-2">
+                                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                            Loading...
+                                        </span>
+                                    </div>
+                                    <div id="config-info" class="text-muted small"></div>
+                                </div>
+                                <div class="col-md-6 text-end">
+                                    <button type="button" class="btn btn-outline-primary btn-sm me-2"
+                                        id="view-config-btn">
+                                        <i class="bi bi-eye me-1"></i>View Config
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm me-2"
+                                        id="create-config-btn" style="display: none;">
+                                        <i class="bi bi-file-plus me-1"></i>Create Config File
+                                    </button>
+                                    <button type="button" class="btn btn-success btn-sm" id="add-remote-btn">
+                                        <i class="bi bi-plus-circle me-1"></i>Add Remote
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Add Remote Section -->
+                            <div class="collapse" id="add-remote-section">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6 class="card-title">Add Remote Configuration</h6>
+                                        <p class="text-muted small">
+                                            Paste the rclone configuration section for a cloud storage provider.
+                                            You can generate this on another system using <code>rclone config</code>
+                                            and then copy the relevant section here.
+                                        </p>
+
+                                        <div class="mb-3">
+                                            <label for="config-text" class="form-label">Configuration Text</label>
+                                            <textarea class="form-control" id="config-text" rows="8"
+                                                placeholder="[RemoteName]&#10;type = dropbox&#10;token = {...}&#10;..."></textarea>
+                                            <div class="form-text">
+                                                Example format:
+                                                <code>[MyDropbox]<br>type = dropbox<br>token = {"access_token":"...", ...}</code>
+                                            </div>
+                                        </div>
+
+                                        <div id="config-validation-result" class="mb-3"></div>
+
+                                        <div class="d-flex gap-2">
+                                            <button type="button" class="btn btn-primary" id="validate-config-btn">
+                                                <i class="bi bi-check-circle me-1"></i>Validate Config
+                                            </button>
+                                            <button type="button" class="btn btn-success" id="save-config-btn" disabled>
+                                                <i class="bi bi-save me-1"></i>Add to Config
+                                            </button>
+                                            <button type="button" class="btn btn-secondary" id="cancel-config-btn">
+                                                <i class="bi bi-x-circle me-1"></i>Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Configured Remotes -->
             <div class="row mb-4">
                 <div class="col-12">
@@ -83,9 +162,9 @@
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody id="remotes-table-body">
                                         {% for remote in remotes %}
-                                        <tr>
+                                        <tr id="remote-row-{{ remote.name }}">
                                             <td><strong>{{ remote.name }}</strong></td>
                                             <td>
                                                 <span class="badge bg-secondary">{{ remote.type }}</span>
@@ -113,6 +192,11 @@
                                                         data-remote="{{ remote.name }}">
                                                         <i class="bi bi-pie-chart me-1"></i>Usage
                                                     </button>
+                                                    <button type="button"
+                                                        class="btn btn-sm btn-danger remove-remote-btn"
+                                                        data-remote="{{ remote.name }}">
+                                                        <i class="bi bi-trash me-1"></i>Remove
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -121,13 +205,12 @@
                                 </table>
                             </div>
                             {% else %}
-                            <div class="text-center py-4">
+                            <div class="text-center py-4" id="no-remotes-message">
                                 <i class="bi bi-cloud-slash text-muted" style="font-size: 3rem;"></i>
                                 <h5 class="text-muted mt-3">No cloud remotes configured</h5>
                                 <p class="text-muted">
-                                    Configure rclone remotes to enable cloud backup functionality.<br>
-                                    Run <code>rclone config</code> in your terminal to set up cloud storage
-                                    providers.
+                                    Add cloud storage remotes using the "Add Remote" button above,<br>
+                                    or configure rclone remotes by running <code>rclone config</code> in your terminal.
                                 </p>
                             </div>
                             {% endif %}
@@ -291,22 +374,68 @@
     </div>
 </div>
 
+<!-- View Config Modal -->
+<div class="modal fade" id="viewConfigModal" tabindex="-1" aria-labelledby="viewConfigModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewConfigModalLabel">rclone Configuration</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="configContent">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading configuration...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Alert container for messages -->
 <div id="alertContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 1055"></div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Load config info on page load
+        loadConfigInfo();
+
         // Test all connections on page load
         document.querySelectorAll('.connection-status').forEach(status => {
             const remoteName = status.dataset.remote;
             testConnection(remoteName);
         });
 
+        // Config management event listeners
+        document.getElementById('add-remote-btn').addEventListener('click', showAddRemoteSection);
+        document.getElementById('cancel-config-btn').addEventListener('click', hideAddRemoteSection);
+        document.getElementById('validate-config-btn').addEventListener('click', validateConfig);
+        document.getElementById('save-config-btn').addEventListener('click', saveConfig);
+        document.getElementById('view-config-btn').addEventListener('click', viewConfig);
+        document.getElementById('create-config-btn').addEventListener('click', createConfigFile);
+
         // Test connection button handlers
         document.querySelectorAll('.test-connection-btn').forEach(btn => {
             btn.addEventListener('click', function () {
                 const remoteName = this.dataset.remote;
                 testConnection(remoteName);
+            });
+        });
+
+        // Remove remote button handlers
+        document.querySelectorAll('.remove-remote-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const remoteName = this.dataset.remote;
+                if (confirm(`Are you sure you want to remove remote "${remoteName}" from the configuration?`)) {
+                    removeRemote(remoteName);
+                }
             });
         });
 
@@ -357,7 +486,316 @@
             uploadBackup(remoteName, customPath, createNew);
         });
 
-        // Functions
+        // Config management functions
+        function loadConfigInfo() {
+            fetch('{{ url_for("backup.get_config_info") }}')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateConfigStatus(data.config_info);
+                    } else {
+                        document.getElementById('config-status').innerHTML = `
+                            <span class="badge bg-danger">
+                                <i class="bi bi-x-circle me-1"></i>Error
+                            </span>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('config-status').innerHTML = `
+                        <span class="badge bg-warning">
+                            <i class="bi bi-exclamation-triangle me-1"></i>Unknown
+                        </span>
+                    `;
+                });
+        }
+
+        function updateConfigStatus(configInfo) {
+            const statusElement = document.getElementById('config-status');
+            const infoElement = document.getElementById('config-info');
+            const createBtn = document.getElementById('create-config-btn');
+            const viewBtn = document.getElementById('view-config-btn');
+            const addBtn = document.getElementById('add-remote-btn');
+
+            if (configInfo.exists) {
+                statusElement.innerHTML = `
+                    <span class="badge bg-success">
+                        <i class="bi bi-check-circle me-1"></i>Found
+                    </span>
+                `;
+
+                const sizeKB = Math.round(configInfo.size / 1024 * 100) / 100;
+                infoElement.innerHTML = `
+                    Path: <code>${configInfo.path}</code><br>
+                    Size: ${sizeKB} KB | Remotes: ${configInfo.remotes_count} | 
+                    Readable: ${configInfo.readable ? '✓' : '✗'} | 
+                    Writable: ${configInfo.writable ? '✓' : '✗'}
+                `;
+
+                // Show view button, hide create button, enable add button
+                viewBtn.style.display = 'inline-block';
+                createBtn.style.display = 'none';
+                addBtn.disabled = !configInfo.writable;
+                if (!configInfo.writable) {
+                    addBtn.title = 'Config file is not writable';
+                }
+            } else {
+                statusElement.innerHTML = `
+                    <span class="badge bg-warning">
+                        <i class="bi bi-exclamation-triangle me-1"></i>Not Found
+                    </span>
+                `;
+
+                if (configInfo.can_create) {
+                    infoElement.innerHTML = `
+                        Expected path: <code>${configInfo.path}</code><br>
+                        <span class="text-success">
+                            <i class="bi bi-check-circle me-1"></i>Config file can be created
+                        </span>
+                    `;
+                    // Show create button, hide view button, disable add button until created
+                    createBtn.style.display = 'inline-block';
+                    viewBtn.style.display = 'none';
+                    addBtn.disabled = true;
+                    addBtn.title = 'Create config file first';
+                } else {
+                    infoElement.innerHTML = `
+                        Expected path: <code>${configInfo.path}</code><br>
+                        <span class="text-danger">
+                            <i class="bi bi-x-circle me-1"></i>Cannot create config file (insufficient permissions)
+                        </span>
+                    `;
+                    // Hide both buttons, disable add button
+                    createBtn.style.display = 'none';
+                    viewBtn.style.display = 'none';
+                    addBtn.disabled = true;
+                    addBtn.title = 'Config file not found and cannot be created';
+                }
+            }
+        }
+
+        function createConfigFile() {
+            if (!confirm('This will create a new rclone configuration file. Continue?')) {
+                return;
+            }
+
+            const createBtn = document.getElementById('create-config-btn');
+            const originalText = createBtn.innerHTML;
+
+            // Show loading state
+            createBtn.disabled = true;
+            createBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
+
+            fetch('{{ url_for("backup.create_config_file") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('Success!', data.message, 'success');
+                        // Reload config info to update status
+                        loadConfigInfo();
+                    } else {
+                        showAlert('Error!', data.message, 'danger');
+                    }
+                })
+                .catch(error => {
+                    showAlert('Error!', 'Failed to create config file: ' + error.message, 'danger');
+                })
+                .finally(() => {
+                    createBtn.disabled = false;
+                    createBtn.innerHTML = originalText;
+                });
+        }
+
+        function showAddRemoteSection() {
+            const section = document.getElementById('add-remote-section');
+            const btn = document.getElementById('add-remote-btn');
+
+            section.classList.add('show');
+            btn.style.display = 'none';
+        }
+
+        function hideAddRemoteSection() {
+            const section = document.getElementById('add-remote-section');
+            const btn = document.getElementById('add-remote-btn');
+
+            section.classList.remove('show');
+            btn.style.display = 'inline-block';
+
+            // Clear form
+            document.getElementById('config-text').value = '';
+            document.getElementById('config-validation-result').innerHTML = '';
+            document.getElementById('save-config-btn').disabled = true;
+        }
+
+        function validateConfig() {
+            const configText = document.getElementById('config-text').value;
+            const resultDiv = document.getElementById('config-validation-result');
+            const saveBtn = document.getElementById('save-config-btn');
+
+            if (!configText.trim()) {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Please enter a configuration section to validate.
+                    </div>
+                `;
+                saveBtn.disabled = true;
+                return;
+            }
+
+            fetch('{{ url_for("backup.validate_config_section") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ config_text: configText })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        resultDiv.innerHTML = `
+                            <div class="alert alert-success">
+                                <i class="bi bi-check-circle me-2"></i>
+                                <strong>Valid Configuration:</strong> ${data.message}
+                                <br><small class="text-muted">Remote: "${data.config_info.name}" (${data.config_info.type})</small>
+                            </div>
+                        `;
+                        saveBtn.disabled = false;
+                    } else {
+                        resultDiv.innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="bi bi-x-circle me-2"></i>
+                                <strong>Invalid Configuration:</strong> ${data.message}
+                            </div>
+                        `;
+                        saveBtn.disabled = true;
+                    }
+                })
+                .catch(error => {
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>Validation Error:</strong> ${error.message}
+                        </div>
+                    `;
+                    saveBtn.disabled = true;
+                });
+        }
+
+        function saveConfig() {
+            const configText = document.getElementById('config-text').value;
+
+            fetch('{{ url_for("backup.add_config_section") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ config_text: configText })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('Success!', data.message, 'success');
+                        hideAddRemoteSection();
+                        // Reload page to show new remote
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showAlert('Error!', data.message, 'danger');
+                    }
+                })
+                .catch(error => {
+                    showAlert('Error!', 'Failed to save configuration: ' + error.message, 'danger');
+                });
+        }
+
+        function removeRemote(remoteName) {
+            fetch('{{ url_for("backup.remove_remote") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ remote_name: remoteName })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('Success!', data.message, 'success');
+                        // Remove the row from the table
+                        const row = document.getElementById(`remote-row-${remoteName}`);
+                        if (row) {
+                            row.remove();
+                        }
+
+                        // Check if no remotes left
+                        const tbody = document.getElementById('remotes-table-body');
+                        if (tbody && tbody.children.length === 0) {
+                            // Show no remotes message and reload page
+                            setTimeout(() => location.reload(), 1500);
+                        }
+                    } else {
+                        showAlert('Error!', data.message, 'danger');
+                    }
+                })
+                .catch(error => {
+                    showAlert('Error!', 'Failed to remove remote: ' + error.message, 'danger');
+                });
+        }
+
+        function viewConfig() {
+            const modal = new bootstrap.Modal(document.getElementById('viewConfigModal'));
+            const contentDiv = document.getElementById('configContent');
+
+            // Show loading state
+            contentDiv.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading configuration...</p>
+                </div>
+            `;
+
+            modal.show();
+
+            fetch('{{ url_for("backup.get_config_content") }}')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        contentDiv.innerHTML = `
+                            <div class="mb-3">
+                                <label class="form-label">Current rclone Configuration:</label>
+                                <pre class="bg-dark text-light p-3 rounded" style="max-height: 400px; overflow-y: auto;"><code>${data.content}</code></pre>
+                            </div>
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                This is a read-only view of your rclone configuration file.
+                            </div>
+                        `;
+                    } else {
+                        contentDiv.innerHTML = `
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                ${data.error}
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    contentDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="bi bi-x-circle me-2"></i>
+                            Error loading configuration: ${error.message}
+                        </div>
+                    `;
+                });
+        }
+
+        // ... (rest of the existing functions remain the same)
         function testConnection(remoteName) {
             const statusElement = document.querySelector(`[data-remote="${remoteName}"]`);
 
@@ -411,6 +849,7 @@
             const modal = bootstrap.Modal.getInstance(document.getElementById('uploadBackupModal'));
             const progressDiv = document.getElementById('uploadProgress');
             const confirmBtn = document.getElementById('confirmUploadBtn');
+
             // Show progress and disable button
             progressDiv.style.display = 'block';
             confirmBtn.disabled = true;
