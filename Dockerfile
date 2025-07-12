@@ -15,15 +15,13 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install rclone
-RUN curl -O https://downloads.rclone.org/rclone-current-linux-amd64.zip \
-    && unzip rclone-current-linux-amd64.zip \
-    && cd rclone-*-linux-amd64 \
-    && cp rclone /usr/bin/ \
+RUN curl -L -o rclone.zip https://downloads.rclone.org/rclone-current-linux-amd64.zip \
+    && unzip rclone.zip \
+    && find . -name "rclone" -type f -executable -exec cp {} /usr/bin/ \; \
     && chown root:root /usr/bin/rclone \
     && chmod 755 /usr/bin/rclone \
-    && cd .. \
-    && rm -rf rclone-* \
-    && rm rclone-current-linux-amd64.zip
+    && rm -rf rclone* \
+    && rclone version
 
 # Copy requirements first for better caching
 COPY requirements.txt .
