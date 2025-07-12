@@ -14,6 +14,15 @@
 <div class="container mb-5">
   <div class="row justify-content-center">
     <div class="col-md-8">
+      <div id="form-errors">
+        {% for field, errors in form.errors.items() %}
+        {% for error in errors %}
+        <div class="row">
+          <div class="alert alert-danger">{{ field }}: {{ error }}</div>
+        </div>
+        {% endfor %}
+        {% endfor %}
+      </div>
       <h5 id="page-heading">View Job</h5>
       <br />
       <form id="job-view-form" action="" method="post" enctype="multipart/form-data">
@@ -92,13 +101,13 @@
           <div class="row">
             <div class="col">
               <label for="salary_range_low">{{ form.salary_range_low.label.text }}</label>
-              {{ form.salary_range_low(size=32, class="form-control", value=job.salary_range_low, disabled=true,
+              {{ form.salary_range_low(type="number", class="form-control", value=job.salary_range_low, disabled=true,
               id="salary_range_low") }}
               <br />
             </div>
             <div class="col">
               <label for="salary_range_high">{{ form.salary_range_high.label.text }}</label>
-              {{ form.salary_range_high(size=32, class="form-control", value=job.salary_range_high, disabled=true,
+              {{ form.salary_range_high(type="number", class="form-control", value=job.salary_range_high, disabled=true,
               id="salary_range_high") }}
             </div>
           </div>
