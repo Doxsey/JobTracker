@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, jsonify, request, send_file, flash, redirect, url_for, current_app, Response
 from app import db
 from app.services.cloud_backup_service import CloudBackupService
-import os, io, zipfile, tempfile, sqlite3, shutil, subprocess
+import os, io, zipfile, tempfile, sqlite3, shutil, subprocess, configparser
 from datetime import datetime
 from werkzeug.utils import secure_filename
 
@@ -81,7 +81,6 @@ def export_data_stream():
         
     except Exception as e:
         flash(f'Export failed: {str(e)}', 'danger')
-        # return redirect(url_for('settings.index'))
         return render_template('backup/backup.html')
 
 @backup_bp.route('/cloud', methods=['GET'])
@@ -125,6 +124,127 @@ def cloud_backup_page():
                          remotes=remotes,
                          cloud_backups=cloud_backups,
                          cloud_backup_path=cloud_service.backup_path)
+
+@backup_bp.route('/cloud/config-info', methods=['GET'])
+def get_config_info():
+    """Get rclone config file information"""
+    try:
+        cloud_service = CloudBackupService()
+        config_info = cloud_service.get_rclone_config_info()
+        
+        return jsonify({
+            'success': True,
+            'config_info': config_info
+        }), 200
+        
+    except Exception as e:
+        current_app.logger.error(f"Error getting config info: {str(e)}")
+        return jsonify({'error': f'Failed to get config info: {str(e)}'}), 500
+
+@backup_bp.route('/cloud/validate-config', methods=['POST'])
+def validate_config_section():
+    """Validate a pasted rclone config section"""
+    data = request.get_json()
+    config_text = data.get('config_text', '').strip()
+    
+    if not config_text:
+        return jsonify({'error': 'Config text is required'}), 400
+    
+    try:
+        cloud_service = CloudBackupService()
+        is_valid, message, config_info = cloud_service.validate_config_section(config_text)
+        
+        return jsonify({
+            'success': is_valid,
+            'message': message,
+            'config_info': config_info if is_valid else None
+        }), 200 if is_valid else 400
+        
+    except Exception as e:
+        current_app.logger.error(f"Error validating config: {str(e)}")
+        return jsonify({'error': f'Validation failed: {str(e)}'}), 500
+
+@backup_bp.route('/cloud/create-config', methods=['POST'])
+def create_config_file():
+    """Create an empty rclone config file"""
+    try:
+        cloud_service = CloudBackupService()
+        success, message = cloud_service.create_config_file()
+        
+        return jsonify({
+            'success': success,
+            'message': message
+        }), 200 if success else 400
+        
+    except Exception as e:
+        current_app.logger.error(f"Error creating config file: {str(e)}")
+        return jsonify({'error': f'Failed to create config file: {str(e)}'}), 500
+
+@backup_bp.route('/cloud/add-config', methods=['POST'])
+def add_config_section():
+    """Add a config section to the rclone config file"""
+    data = request.get_json()
+    config_text = data.get('config_text', '').strip()
+    
+    if not config_text:
+        return jsonify({'error': 'Config text is required'}), 400
+    
+    try:
+        cloud_service = CloudBackupService()
+        success, message = cloud_service.append_config_section(config_text)
+        
+        return jsonify({
+            'success': success,
+            'message': message
+        }), 200 if success else 400
+        
+    except Exception as e:
+        current_app.logger.error(f"Error adding config: {str(e)}")
+        return jsonify({'error': f'Failed to add config: {str(e)}'}), 500
+
+@backup_bp.route('/cloud/remove-remote', methods=['POST'])
+def remove_remote():
+    """Remove a remote from the rclone config"""
+    data = request.get_json()
+    remote_name = data.get('remote_name', '').strip()
+    
+    if not remote_name:
+        return jsonify({'error': 'Remote name is required'}), 400
+    
+    try:
+        cloud_service = CloudBackupService()
+        success, message = cloud_service.remove_remote_from_config(remote_name)
+        
+        return jsonify({
+            'success': success,
+            'message': message
+        }), 200 if success else 400
+        
+    except Exception as e:
+        current_app.logger.error(f"Error removing remote: {str(e)}")
+        return jsonify({'error': f'Failed to remove remote: {str(e)}'}), 500
+
+@backup_bp.route('/cloud/get-config', methods=['GET'])
+def get_config_content():
+    """Get the current rclone config file content"""
+    try:
+        cloud_service = CloudBackupService()
+        success, content = cloud_service.get_config_content()
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'content': content
+            }), 200
+        else:
+            return jsonify({
+                'success': False,
+                'error': content  # content contains error message when success is False
+            }), 404
+        
+    except Exception as e:
+        current_app.logger.error(f"Error getting config content: {str(e)}")
+        return jsonify({'error': f'Failed to get config content: {str(e)}'}), 500
 
 @backup_bp.route('/cloud/test-connection', methods=['POST'])
 def test_cloud_connection():
@@ -380,28 +500,6 @@ def get_storage_usage(remote_name):
         current_app.logger.error(f"Error getting storage usage: {str(e)}")
         return jsonify({'error': f'Failed to get storage usage: {str(e)}'}), 500
 
-def create_manifest_data():
-    """Create manifest data as a JSON string"""
-    import json
-    from app.models import Job, JobNotes, JobActivities
-    
-    manifest = {
-        'backup_version': '1.0',
-        'created_at': datetime.now().isoformat(),
-        'database_file': 'app.db',
-        'files_directory': 'JobTrackerFiles',
-        'statistics': {
-            'total_jobs': Job.query.count(),
-            'total_notes': JobNotes.query.count(),
-            'total_activities': JobActivities.query.count(),
-        },
-        'application_version': '1.0'
-    }
-    
-    return json.dumps(manifest, indent=2)
-
-
-
 @backup_bp.route('/import', methods=['POST'])
 def import_data():
     """Import data from uploaded ZIP file - REPLACES all existing data"""
@@ -504,6 +602,26 @@ def export_csv():
             'Content-Disposition': f'attachment; filename=job_tracker_jobs_{datetime.now().strftime("%Y%m%d")}.csv'
         }
     )
+
+def create_manifest_data():
+    """Create manifest data as a JSON string"""
+    import json
+    from app.models import Job, JobNotes, JobActivities
+    
+    manifest = {
+        'backup_version': '1.0',
+        'created_at': datetime.now().isoformat(),
+        'database_file': 'app.db',
+        'files_directory': 'JobTrackerFiles',
+        'statistics': {
+            'total_jobs': Job.query.count(),
+            'total_notes': JobNotes.query.count(),
+            'total_activities': JobActivities.query.count(),
+        },
+        'application_version': '1.0'
+    }
+    
+    return json.dumps(manifest, indent=2)
 
 def backup_database_sqlite(source_db_path, backup_db_path):
     """Use SQLite's native backup API with Windows compatibility"""
